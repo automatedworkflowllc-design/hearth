@@ -1,5 +1,6 @@
 import React from 'react';
-import { HeartHandshake, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
+import { BrandMark } from './BrandMark';
 import { AccessibilityToolbar } from './AccessibilityToolbar';
 import type { AccessibilityState } from '../types/index';
 
@@ -16,12 +17,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchClick, accessibility }) 
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="bg-brand-600 p-2 rounded-lg text-white flex items-center justify-center">
-            <HeartHandshake className="w-6 h-6" aria-hidden="true" />
+          <div className="bg-white p-1.5 rounded-lg flex items-center justify-center">
+            <BrandMark className="w-6 h-6 text-teal-600" />
           </div>
           <div>
-            <span className="font-bold text-xl tracking-tight block">Community Resource Hub</span>
-            <span className="text-xs text-blue-200 hidden sm:block">Local Support & Assistance Finder</span>
+            <span className="font-bold text-xl tracking-tight block">Hearth</span>
+            <span className="text-xs text-blue-200 hidden sm:block">Find local support near you</span>
           </div>
         </div>
 

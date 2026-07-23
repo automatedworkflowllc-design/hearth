@@ -10,7 +10,7 @@ export const Footer: React.FC = () => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
-          <h2 className="text-white font-semibold text-lg mb-2">Community Resource Hub</h2>
+          <h2 className="text-white font-semibold text-lg mb-2">Hearth</h2>
           <p className="text-xs text-gray-400">
             A demonstration app for discovering local community services.
           </p>
