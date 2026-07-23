@@ -54,9 +54,10 @@ this document will be updated from the code, never ahead of it.)
 - Detail view with full info + contact links: **yes**; interactive map with markers +
   opt-in "near me" (GPS / on-device ZIP) + distance sort: **yes** (M2).
 - Fully responsive: **largely**, pending the M3/M4 accessibility + styling pass.
-- Reusable components + automated tests for search/filter: **partial** — real unit tests
-  are being (re)built in plan M3; the original agent-written E2E suite was test theater
-  (it never rendered the app and failed 18/20) and has been removed.
+- Reusable components + automated tests for search/filter: **yes** — 20 real Vitest tests
+  (service unit tests, App integration, and accessibility wiring), all green from one
+  command (`npm test`). The original agent-written E2E suite was test theater (it never
+  rendered the app and failed 18/20) and was removed.
 
 ## Provenance
 - `as-generated` tag = unmodified agent output (contains its original, partly-false docs).
