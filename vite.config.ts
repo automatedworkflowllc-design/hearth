@@ -15,5 +15,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './tests/setup.ts',
     css: true,
+    // Only run the curated suite under tests/ and colocated src tests -- never sweep
+    // stray *.test.* elsewhere (the deleted .agents/ fossil used to leak into runs).
+    include: ['tests/**/*.{test,spec}.{ts,tsx}', 'src/**/*.{test,spec}.{ts,tsx}'],
   },
 });

@@ -6,7 +6,7 @@ import { ResourceDetailModal } from './components/ResourceDetailModal';
 import { searchResources } from './services/resourceService';
 import { mockResources } from './data/resources';
 import type { Resource } from './types/index';
-import { Sparkles, AlertCircle, MapPin } from 'lucide-react';
+import { AlertCircle, MapPin } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,18 +30,20 @@ export const App: React.FC = () => {
   return (
     <Layout>
       <div className="space-y-6">
+        {/* Demo disclaimer -- temporary M1 honesty stopgap; verified real data lands in M2. */}
+        <div role="alert" className="bg-amber-50 border border-amber-300 text-amber-900 rounded-xl px-4 py-3 text-sm">
+          <strong>Demo directory.</strong> These listings are illustrative sample data, not a verified live directory. For real, current help right now, call{' '}
+          <a className="font-semibold underline" href="tel:211">211</a> (community services) or{' '}
+          <a className="font-semibold underline" href="tel:988">988</a> (crisis &amp; suicide lifeline).
+        </div>
         {/* Banner Hero */}
         <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
           <div className="relative z-10 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-semibold mb-3 border border-white/20">
-              <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
-              <span>Nationwide Community Aid & Resource Network</span>
-            </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">
-              Community Resource & Aid Finder
+              Find local support services
             </h2>
             <p className="text-blue-100 text-sm sm:text-base font-normal leading-relaxed">
-              Search by city, zip code, or service category to find local food pantries, emergency shelters, medical clinics, and legal aid across the United States.
+              Search by category or location to find food pantries, emergency shelters, medical clinics, and legal aid.
             </p>
           </div>
           {/* Subtle Background Glow */}

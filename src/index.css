@@ -22,7 +22,7 @@ html[data-contrast="standard"] {
   --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
 
-/* High Contrast Mode Variables (WCAG AAA compliant 7:1) */
+/* High Contrast Mode Variables (values target a 7:1 ratio; mode not yet wired -- plan M3) */
 html[data-contrast="high-contrast"],
 .high-contrast {
   --bg-app: #000000;

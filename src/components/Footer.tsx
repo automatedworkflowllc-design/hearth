@@ -12,7 +12,7 @@ export const Footer: React.FC = () => {
         <div>
           <h2 className="text-white font-semibold text-lg mb-2">Community Resource Hub</h2>
           <p className="text-xs text-gray-400">
-            Providing accessible, real-time community service discovery for everyone.
+            A demonstration app for discovering local community services.
           </p>
         </div>
 
@@ -34,7 +34,7 @@ export const Footer: React.FC = () => {
             Accessibility & Privacy
           </h3>
           <p className="text-xs text-gray-400">
-            Designed to WCAG 2.1 AA standards. Zero personal data tracking.
+            Zero personal data tracking, no analytics, no cookies.
           </p>
         </div>
       </div>

@@ -23,7 +23,7 @@ const categories = [
 ];
 
 const cities = [
-  { id: 'all', label: 'All Locations Nationwide' },
+  { id: 'all', label: 'All Locations' },
   { id: 'San Francisco', label: '📍 San Francisco, CA' },
   { id: 'New York', label: '📍 New York City, NY' },
   { id: 'Chicago', label: '📍 Chicago, IL' },
@@ -99,8 +99,8 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
       {/* Filter Stats & Sort */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs text-slate-600">
         <span className="font-semibold text-slate-900">
-          Showing {totalResultsCount} resource{totalResultsCount === 1 ? '' : 's'} available
-          {selectedCity !== 'all' ? ` in ${selectedCity}` : ' nationwide'}
+          Showing {totalResultsCount} resource{totalResultsCount === 1 ? '' : 's'}
+          {selectedCity !== 'all' ? ` in ${selectedCity}` : ''}
         </span>
 
         <div className="flex items-center gap-2">
