@@ -34,12 +34,19 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onSelect }
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider ${categoryStyle.bg} ${categoryStyle.text} border ${categoryStyle.border}`}>
             {resource.category}
           </span>
-          {resource.availability && (
-            <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              {resource.availability}
-            </span>
-          )}
+          <div className="flex items-center gap-1.5">
+            {typeof resource.distanceMiles === 'number' && (
+              <span className="inline-flex items-center text-xs font-semibold px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md">
+                {resource.distanceMiles.toFixed(1)} mi
+              </span>
+            )}
+            {resource.availability && (
+              // Static service descriptor (e.g. "By appointment"), not a live/open-now claim.
+              <span className="inline-flex items-center text-xs font-medium px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md">
+                {resource.availability}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Title */}

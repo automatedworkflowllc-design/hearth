@@ -9,6 +9,7 @@ interface FilterPanelProps {
   sortBy: 'relevance' | 'name' | 'distance';
   onSortChange: (sort: 'relevance' | 'name' | 'distance') => void;
   totalResultsCount: number;
+  distanceAvailable?: boolean;
 }
 
 const categories = [
@@ -28,6 +29,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   sortBy,
   onSortChange,
   totalResultsCount,
+  distanceAvailable = false,
 }) => {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6">
@@ -83,6 +85,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
           >
             <option value="relevance">Relevance</option>
             <option value="name">Name (A-Z)</option>
+            {distanceAvailable && <option value="distance">Distance (nearest)</option>}
           </select>
         </div>
       </div>

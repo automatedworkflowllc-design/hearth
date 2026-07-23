@@ -96,21 +96,28 @@ export function searchResources(
     return true;
   });
 
-  // 5. Sorting
-  if (sortBy === 'distance' && userLocation) {
+  // Annotate distance from the user's chosen location (if any) so cards can show "X mi"
+  // regardless of sort. Missing-coords resources get no distance and sort LAST -- never
+  // to 0,0 (Gulf of Guinea), which was the audited bug.
+  if (userLocation) {
     const userLat = userLocation.lat ?? userLocation.latitude;
     const userLng = userLocation.lng ?? userLocation.longitude;
     if (typeof userLat === 'number' && typeof userLng === 'number') {
-      // A resource with no coordinates must sort LAST, not to 0,0 (Gulf of Guinea) as
-      // if it were "nearby" -- that was the audited distance bug. Missing coords => Infinity.
-      const distOf = (r: Resource): number => {
+      results = results.map((r) => {
         const lat = r.location.lat ?? r.location.latitude;
         const lng = r.location.lng ?? r.location.longitude;
-        if (typeof lat !== 'number' || typeof lng !== 'number') return Infinity;
-        return calculateDistance(userLat, userLng, lat, lng);
-      };
-      results = [...results].sort((a, b) => distOf(a) - distOf(b));
+        const distanceMiles =
+          typeof lat === 'number' && typeof lng === 'number'
+            ? calculateDistance(userLat, userLng, lat, lng)
+            : undefined;
+        return { ...r, distanceMiles };
+      });
     }
+  }
+
+  // 5. Sorting
+  if (sortBy === 'distance' && userLocation) {
+    results = [...results].sort((a, b) => (a.distanceMiles ?? Infinity) - (b.distanceMiles ?? Infinity));
   } else if (sortBy === 'name') {
     results = [...results].sort((a, b) => a.name.localeCompare(b.name));
   } else if (sortBy === 'relevance' && normalizedQuery.length > 0) {
