@@ -79,6 +79,16 @@ describe('distance behavior (the audited 0,0 bug)', () => {
     expect(r[0].id).toBe('alpha');            // nearest
     expect(r[r.length - 1].id).toBe('gamma'); // coord-less -> last
   });
+
+  it('treats NaN coordinates as missing -- no bogus "0 mi nearest"', () => {
+    const withNaN: Resource[] = [
+      { id: 'good', name: 'Good', category: 'food', description: 'x', location: { lat: 29.66, lng: -82.33 }, hours: '', tags: [] },
+      { id: 'nan', name: 'Nan', category: 'food', description: 'x', location: { lat: NaN, lng: NaN }, hours: '', tags: [] },
+    ];
+    const r = searchResources('', 'all', 'all', [], { lat: 29.66, lng: -82.33 }, 'distance', withNaN);
+    expect(r.find((x) => x.id === 'nan')!.distanceMiles).toBeUndefined();
+    expect(r[r.length - 1].id).toBe('nan'); // NaN coords sort last, not to 0 mi
+  });
 });
 
 describe('calculateDistance (Haversine)', () => {

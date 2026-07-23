@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Layout from './components/Layout';
 import { FilterPanel } from './components/FilterPanel';
 import { ResourceCard } from './components/ResourceCard';
@@ -37,6 +37,10 @@ export const App: React.FC = () => {
     clear();
     setSortBy((s) => (s === 'distance' ? 'relevance' : s));
   };
+
+  // Stable identity so the modal's focus-trap/scroll-lock effect runs on open/close only,
+  // not on every re-render of App (e.g. typing in search).
+  const closeModal = useCallback(() => setSelectedResource(null), []);
 
   const filteredResources = useMemo(() => {
     return searchResources(
@@ -149,7 +153,7 @@ export const App: React.FC = () => {
         )}
 
         {/* Detail Modal */}
-        <ResourceDetailModal resource={selectedResource} onClose={() => setSelectedResource(null)} />
+        <ResourceDetailModal resource={selectedResource} onClose={closeModal} />
       </div>
     </Layout>
   );

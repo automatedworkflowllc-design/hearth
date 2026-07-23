@@ -1,5 +1,4 @@
 import React from 'react';
-import { Contrast } from 'lucide-react';
 import type { AccessibilityState, TextSize } from '../types/index';
 
 const SIZES: { id: TextSize; label: string; a11y: string }[] = [
@@ -9,32 +8,20 @@ const SIZES: { id: TextSize; label: string; a11y: string }[] = [
 ];
 
 /**
- * Contrast + text-size controls, wired to the (now live) useAccessibility hook. Styled for
- * the dark navbar. Uses aria-pressed so screen readers announce the active state; text-size
- * changes are announced via the aria-live region.
+ * Text-size controls, wired to the (now live) useAccessibility hook: clicking these writes
+ * data-text-size onto <html> (index.css scales rem-based type) and persists it.
+ *
+ * NOTE: the contrast toggle was intentionally REMOVED after the M3 review. Its only real
+ * effect was a global filter(130%) -- components still use hardcoded colors, so it did NOT
+ * deliver the 7:1 theme its label implied, and announcing "high contrast" success to a
+ * low-vision user over a near-cosmetic change is an overclaim. It returns in M4 once the
+ * token swap makes surfaces actually flip. Text size, which genuinely works, ships now.
  */
-export const AccessibilityToolbar: React.FC<AccessibilityState> = ({
-  contrastMode,
-  textSize,
-  toggleContrast,
-  setTextSize,
-}) => {
-  const highContrast = contrastMode === 'high-contrast';
+export const AccessibilityToolbar: React.FC<AccessibilityState> = ({ textSize, setTextSize }) => {
   return (
-    <div className="flex items-center gap-2" role="group" aria-label="Accessibility settings">
-      <button
-        type="button"
-        onClick={toggleContrast}
-        aria-pressed={highContrast}
-        className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-white ${
-          highContrast ? 'bg-white text-brand-900' : 'bg-brand-800 text-white hover:bg-brand-700'
-        }`}
-      >
-        <Contrast className="h-4 w-4" aria-hidden="true" />
-        <span className="hidden sm:inline">High contrast</span>
-      </button>
-
-      <div className="flex items-center gap-0.5" role="group" aria-label="Text size">
+    <div className="flex items-center gap-1.5" role="group" aria-label="Text size">
+      <span className="hidden sm:inline text-xs font-medium text-blue-200">Text size</span>
+      <div className="flex items-center gap-0.5">
         {SIZES.map((s) => {
           const active = textSize === s.id;
           return (
@@ -53,10 +40,7 @@ export const AccessibilityToolbar: React.FC<AccessibilityState> = ({
           );
         })}
       </div>
-
-      <span aria-live="polite" className="sr-only">
-        {`Contrast ${highContrast ? 'high' : 'standard'}, text size ${textSize}`}
-      </span>
+      <span aria-live="polite" className="sr-only">{`Text size ${textSize}`}</span>
     </div>
   );
 };

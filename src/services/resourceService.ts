@@ -102,13 +102,15 @@ export function searchResources(
   if (userLocation) {
     const userLat = userLocation.lat ?? userLocation.latitude;
     const userLng = userLocation.lng ?? userLocation.longitude;
-    if (typeof userLat === 'number' && typeof userLng === 'number') {
+    // Number.isFinite (not typeof === 'number'): NaN is a number and would slip through,
+    // making calculateDistance return 0 -> a bogus "0 mi, nearest". Finite-only closes that.
+    if (Number.isFinite(userLat) && Number.isFinite(userLng)) {
       results = results.map((r) => {
         const lat = r.location.lat ?? r.location.latitude;
         const lng = r.location.lng ?? r.location.longitude;
         const distanceMiles =
-          typeof lat === 'number' && typeof lng === 'number'
-            ? calculateDistance(userLat, userLng, lat, lng)
+          Number.isFinite(lat) && Number.isFinite(lng)
+            ? calculateDistance(userLat as number, userLng as number, lat as number, lng as number)
             : undefined;
         return { ...r, distanceMiles };
       });

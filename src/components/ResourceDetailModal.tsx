@@ -23,8 +23,10 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resour
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden'; // scroll-lock the page behind the dialog
 
-    // Move focus into the dialog.
-    panelRef.current?.focus();
+    // Move focus onto the first real focusable inside the dialog (not the tabIndex=-1 panel):
+    // focusing the panel let Shift+Tab escape the trap, since the panel is not in the cycle.
+    const initial = panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE);
+    (initial && initial.length ? initial[0] : panelRef.current)?.focus();
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {

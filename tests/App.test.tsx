@@ -60,11 +60,11 @@ describe('accessibility wiring (was dead code before M3)', () => {
     expect(first).toHaveAttribute('href', '#main-content');
   });
 
-  it('toolbar toggles actually apply to <html> (hook is wired, not dead)', () => {
+  it('text-size toolbar actually applies to <html> (hook is wired, not dead)', () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /high contrast/i }));
-    expect(document.documentElement.dataset.contrast).toBe('high-contrast');
     fireEvent.click(screen.getByRole('button', { name: 'Large text size' }));
     expect(document.documentElement.dataset.textSize).toBe('large');
+    fireEvent.click(screen.getByRole('button', { name: 'Extra large text size' }));
+    expect(document.documentElement.dataset.textSize).toBe('extra-large');
   });
 });

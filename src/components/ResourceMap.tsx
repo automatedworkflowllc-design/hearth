@@ -15,7 +15,8 @@ const GAINESVILLE_CENTER: [number, number] = [29.6516, -82.3248];
 function coordsOf(r: Resource): [number, number] | null {
   const lat = r.location?.lat ?? r.location?.latitude;
   const lng = r.location?.lng ?? r.location?.longitude;
-  return typeof lat === 'number' && typeof lng === 'number' ? [lat, lng] : null;
+  // Finite-only: a NaN/missing coord must be excluded from the map, never pinned at 0,0.
+  return Number.isFinite(lat) && Number.isFinite(lng) ? [lat as number, lng as number] : null;
 }
 
 // Inline-SVG pin via divIcon -- avoids Leaflet's broken default marker asset paths under Vite.

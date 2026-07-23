@@ -10,17 +10,18 @@ rebuilt honestly. See the audit + milestone plan referenced at the bottom.
 > resources shown as a demonstration — not a guaranteed-current live directory. The app
 > shows an in-product disclaimer pointing to 211 / 988.
 
-## Architecture (what actually exists in `src/`, as of M2)
+## Architecture (what actually exists in `src/`, as of M3)
 - `components/`: `Layout`, `Navbar`, `Header`, `Footer`, `FilterPanel`, `LocationControl`,
-  `ResourceCard`, `ResourceMap` (react-leaflet), `ResourceDetailModal`. (No accessibility
-  toolbar yet — see plan M3.)
+  `AccessibilityToolbar` (text-size), `ResourceCard`, `ResourceMap` (react-leaflet),
+  `ResourceDetailModal` (a real focus-trapped dialog).
 - `services/resourceService.ts`: client-side search/filter/sort incl. distance sort + a
   Haversine `calculateDistance`; annotates `distanceMiles` when a user location is set.
 - `data/resources.ts`: 11 real, verified Gainesville-area resources (source of record:
   `VERIFIED-ORGS.md`). `data/gainesvilleZips.ts`: offline ZIP centroids for the near-me fallback.
 - `hooks/useGeolocation.ts`: opt-in geolocation (GPS + on-device ZIP), never fires on mount.
-  `hooks/useAccessibility.ts`: contrast / text-size state hook (present but **not yet wired
-  into the rendered UI** — plan M3).
+  `hooks/useAccessibility.ts`: **wired as of M3** — text-size controls apply/persist to `<html>`.
+  (High-contrast tokens exist in index.css but aren't consumed by components yet, so that
+  control is deferred to M4's token swap rather than shipped as a near-cosmetic filter.)
 - `types/index.ts`: `Resource`, `Location`, `FilterOptions`, accessibility types.
 - `tests/`: Vitest + Testing Library component tests.
 
