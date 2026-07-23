@@ -1,27 +1,86 @@
-import React from 'react';
+import React, { useEffect, useId, useRef } from 'react';
 import type { Resource } from '../types/index';
-import { X, MapPin, Phone, Mail, Globe, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, MapPin, Phone, Mail, Globe, Clock, CheckCircle2 } from 'lucide-react';
 
 interface ResourceDetailModalProps {
   resource: Resource | null;
   onClose: () => void;
 }
 
+const FOCUSABLE =
+  'a[href], button:not([disabled]), textarea, input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resource, onClose }) => {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
+  const titleId = useId();
+
+  // Accessible dialog behavior. Hooks run unconditionally (before the early return) so
+  // React's hook order is stable whether or not a resource is open.
+  useEffect(() => {
+    if (!resource) return;
+    previouslyFocused.current = document.activeElement as HTMLElement | null;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden'; // scroll-lock the page behind the dialog
+
+    // Move focus into the dialog.
+    panelRef.current?.focus();
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key === 'Tab' && panelRef.current) {
+        const nodes = panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE);
+        if (nodes.length === 0) return;
+        const first = nodes[0];
+        const last = nodes[nodes.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = prevOverflow;
+      previouslyFocused.current?.focus?.(); // return focus to whatever opened the dialog
+    };
+  }, [resource, onClose]);
+
   if (!resource) return null;
 
-  const hoursDisplay = typeof resource.hours === 'string'
-    ? resource.hours
-    : resource.hours.map(h => `${h.day}: ${h.closed ? 'Closed' : `${h.open}-${h.close}`}`).join('\n');
+  const hoursDisplay =
+    typeof resource.hours === 'string'
+      ? resource.hours
+      : resource.hours.map((h) => `${h.day}: ${h.closed ? 'Closed' : `${h.open}-${h.close}`}`).join('\n');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto border border-slate-200 p-6 relative">
-        {/* Close Button */}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose(); // click on the backdrop closes
+      }}
+    >
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="bg-white rounded-2xl shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto border border-slate-200 p-6 relative focus:outline-none"
+      >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition-colors"
-          aria-label="Close modal"
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
@@ -32,15 +91,16 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resour
             {resource.category}
           </span>
           {resource.availability && (
-            <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 bg-slate-100 text-slate-700 rounded-full">
               {resource.availability}
             </span>
           )}
         </div>
 
         {/* Title */}
-        <h2 className="text-2xl font-extrabold text-slate-900 mb-3">{resource.name}</h2>
+        <h2 id={titleId} className="text-2xl font-extrabold text-slate-900 mb-3">
+          {resource.name}
+        </h2>
 
         {/* Description */}
         <p className="text-sm text-slate-700 leading-relaxed mb-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
@@ -51,7 +111,7 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resour
         <div className="space-y-4 text-sm text-slate-700 mb-6">
           {resource.address && (
             <div className="flex items-start gap-3">
-              <MapPin className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+              <MapPin className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" aria-hidden="true" />
               <div>
                 <strong className="block text-slate-900 font-semibold">Address</strong>
                 <span>{resource.address}</span>
@@ -60,7 +120,7 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resour
           )}
 
           <div className="flex items-start gap-3">
-            <Clock className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+            <Clock className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" aria-hidden="true" />
             <div>
               <strong className="block text-slate-900 font-semibold">Hours of Operation</strong>
               <pre className="font-sans whitespace-pre-wrap text-slate-600 text-xs mt-0.5">{hoursDisplay}</pre>
@@ -69,12 +129,16 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resour
 
           {resource.eligibility && (
             <div className="flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" aria-hidden="true" />
               <div>
-                <strong className="block text-slate-900 font-semibold">Eligibility Requirements</strong>
+                <strong className="block text-slate-900 font-semibold">Eligibility</strong>
                 <span className="text-slate-600">{resource.eligibility}</span>
               </div>
             </div>
+          )}
+
+          {resource.lastVerified && (
+            <p className="text-xs text-slate-400">Details last verified {resource.lastVerified}.</p>
           )}
 
           {/* Contact Section */}
@@ -82,18 +146,18 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resour
             {resource.phone && (
               <a
                 href={`tel:${resource.phone}`}
-                className="flex items-center gap-2 p-3 bg-blue-50 text-blue-700 rounded-xl font-medium hover:bg-blue-100 transition-colors"
+                className="flex items-center gap-2 p-3 bg-blue-50 text-blue-700 rounded-xl font-medium hover:bg-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <Phone className="w-4 h-4 shrink-0" />
+                <Phone className="w-4 h-4 shrink-0" aria-hidden="true" />
                 <span>{resource.phone}</span>
               </a>
             )}
             {resource.email && (
               <a
                 href={`mailto:${resource.email}`}
-                className="flex items-center gap-2 p-3 bg-slate-50 text-slate-700 rounded-xl font-medium hover:bg-slate-100 transition-colors"
+                className="flex items-center gap-2 p-3 bg-slate-50 text-slate-700 rounded-xl font-medium hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <Mail className="w-4 h-4 shrink-0" />
+                <Mail className="w-4 h-4 shrink-0" aria-hidden="true" />
                 <span className="truncate">{resource.email}</span>
               </a>
             )}
@@ -104,9 +168,9 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resour
               href={resource.website}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full p-3 bg-slate-900 text-white rounded-xl font-semibold hover:bg-slate-800 transition-colors mt-2"
+              className="flex items-center justify-center gap-2 w-full p-3 bg-slate-900 text-white rounded-xl font-semibold hover:bg-slate-800 transition-colors mt-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <Globe className="w-4 h-4" />
+              <Globe className="w-4 h-4" aria-hidden="true" />
               Visit Official Website
             </a>
           )}
@@ -115,7 +179,7 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resour
         {/* Tags */}
         {resource.tags && resource.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-100">
-            {resource.tags.map(tag => (
+            {resource.tags.map((tag) => (
               <span key={tag} className="text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md font-medium">
                 #{tag}
               </span>
@@ -126,3 +190,5 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resour
     </div>
   );
 };
+
+export default ResourceDetailModal;

@@ -6,6 +6,7 @@ import { ResourceDetailModal } from './components/ResourceDetailModal';
 import { LocationControl } from './components/LocationControl';
 import { ResourceMap } from './components/ResourceMap';
 import { useGeolocation } from './hooks/useGeolocation';
+import { useAccessibility } from './hooks/useAccessibility';
 import { searchResources } from './services/resourceService';
 import { mockResources } from './data/resources';
 import type { Resource } from './types/index';
@@ -21,6 +22,7 @@ export const App: React.FC = () => {
   const [view, setView] = useState<ViewMode>('list');
 
   const { location, status, error, requestGps, setFromZip, clear } = useGeolocation();
+  const a11y = useAccessibility();
 
   // When the user sets a location, default the sort to distance (unless they've chosen
   // name); when they clear it, fall back off distance. Never overrides an explicit choice.
@@ -49,7 +51,7 @@ export const App: React.FC = () => {
   }, [searchQuery, selectedCategory, sortBy, location]);
 
   return (
-    <Layout>
+    <Layout accessibility={a11y}>
       <div className="space-y-6">
         {/* Demo disclaimer: sample data, real crisis lines. */}
         <div role="alert" className="bg-amber-50 border border-amber-300 text-amber-900 rounded-xl px-4 py-3 text-sm">

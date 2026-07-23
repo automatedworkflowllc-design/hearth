@@ -1,11 +1,14 @@
 import React from 'react';
-import { HeartHandshake, MapPin, Search } from 'lucide-react';
+import { HeartHandshake, Search } from 'lucide-react';
+import { AccessibilityToolbar } from './AccessibilityToolbar';
+import type { AccessibilityState } from '../types/index';
 
 interface NavbarProps {
   onSearchClick?: () => void;
+  accessibility?: AccessibilityState;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onSearchClick }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onSearchClick, accessibility }) => {
   return (
     <nav
       className="bg-brand-900 text-white shadow-md border-b border-brand-800"
@@ -31,10 +34,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchClick }) => {
             <Search className="w-4 h-4" aria-hidden="true" />
             <span className="hidden md:inline">Search Resources</span>
           </button>
-          <div className="flex items-center space-x-1 text-xs text-blue-200 bg-brand-800 px-2.5 py-1 rounded-full">
-            <MapPin className="w-3.5 h-3.5 text-blue-400" aria-hidden="true" />
-            <span>Local Region</span>
-          </div>
+          {accessibility && <AccessibilityToolbar {...accessibility} />}
         </div>
       </div>
     </nav>

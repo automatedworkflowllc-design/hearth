@@ -2,13 +2,15 @@ import React from 'react';
 import Navbar from './Navbar';
 import Header from './Header';
 import Footer from './Footer';
+import type { AccessibilityState } from '../types/index';
 
 interface LayoutProps {
   children: React.ReactNode;
   onSearchClick?: () => void;
+  accessibility?: AccessibilityState;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, onSearchClick }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, onSearchClick, accessibility }) => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 text-gray-900 antialiased">
       <a
@@ -18,7 +20,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, onSearchClick }) => {
         Skip to main content
       </a>
 
-      <Navbar onSearchClick={onSearchClick} />
+      <Navbar onSearchClick={onSearchClick} accessibility={accessibility} />
       <Header />
 
       <main
