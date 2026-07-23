@@ -101,15 +101,15 @@ export function searchResources(
     const userLat = userLocation.lat ?? userLocation.latitude;
     const userLng = userLocation.lng ?? userLocation.longitude;
     if (typeof userLat === 'number' && typeof userLng === 'number') {
-      results = [...results].sort((a, b) => {
-        const aLat = a.location.lat ?? a.location.latitude ?? 0;
-        const aLng = a.location.lng ?? a.location.longitude ?? 0;
-        const bLat = b.location.lat ?? b.location.latitude ?? 0;
-        const bLng = b.location.lng ?? b.location.longitude ?? 0;
-        const distA = calculateDistance(userLat, userLng, aLat, aLng);
-        const distB = calculateDistance(userLat, userLng, bLat, bLng);
-        return distA - distB;
-      });
+      // A resource with no coordinates must sort LAST, not to 0,0 (Gulf of Guinea) as
+      // if it were "nearby" -- that was the audited distance bug. Missing coords => Infinity.
+      const distOf = (r: Resource): number => {
+        const lat = r.location.lat ?? r.location.latitude;
+        const lng = r.location.lng ?? r.location.longitude;
+        if (typeof lat !== 'number' || typeof lng !== 'number') return Infinity;
+        return calculateDistance(userLat, userLng, lat, lng);
+      };
+      results = [...results].sort((a, b) => distOf(a) - distOf(b));
     }
   } else if (sortBy === 'name') {
     results = [...results].sort((a, b) => a.name.localeCompare(b.name));

@@ -11,7 +11,6 @@ import { AlertCircle, MapPin } from 'lucide-react';
 export const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedCity, setSelectedCity] = useState('all');
   const [sortBy, setSortBy] = useState<'relevance' | 'name' | 'distance'>('relevance');
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
 
@@ -19,13 +18,13 @@ export const App: React.FC = () => {
     return searchResources(
       searchQuery,
       selectedCategory,
-      selectedCity,
+      'all',
       [],
       undefined,
       sortBy,
       mockResources
     );
-  }, [searchQuery, selectedCategory, selectedCity, sortBy]);
+  }, [searchQuery, selectedCategory, sortBy]);
 
   return (
     <Layout>
@@ -56,8 +55,6 @@ export const App: React.FC = () => {
           onSearchChange={setSearchQuery}
           selectedCategory={selectedCategory}
           onCategoryChange={setSelectedCategory}
-          selectedCity={selectedCity}
-          onCityChange={setSelectedCity}
           sortBy={sortBy}
           onSortChange={setSortBy}
           totalResultsCount={filteredResources.length}
@@ -85,7 +82,6 @@ export const App: React.FC = () => {
               onClick={() => {
                 setSearchQuery('');
                 setSelectedCategory('all');
-                setSelectedCity('all');
               }}
               className="px-4 py-2 bg-blue-600 text-white font-semibold text-xs rounded-xl hover:bg-blue-700 transition-colors"
             >

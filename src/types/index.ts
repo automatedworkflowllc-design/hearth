@@ -46,6 +46,7 @@ export interface Resource {
   availabilityStatus?: AvailabilityStatus;
   distanceMiles?: number;
   wheelchairAccessible?: boolean;
+  lastVerified?: string; // ISO date the org's details were last confirmed against its official source
 }
 
 export interface FilterOptions {
