@@ -88,7 +88,8 @@ export const LocationControl: React.FC<LocationControlProps> = ({
       </div>
 
       <p className="mt-2 text-xs text-slate-500">
-        Used only on this device to sort resources by distance. Your location is never sent anywhere.
+        Used on this device to sort resources by distance — your location is never sent to us or stored.
+        (The map view loads map tiles from OpenStreetMap, which like any website sees your IP address.)
       </p>
       {(zipError || error) && (
         <p className="mt-1 text-xs font-medium text-red-600" role="alert">

@@ -6,19 +6,21 @@ rebuild case study**: it was first produced end-to-end by an automated agent cod
 system (captured untouched at the `as-generated` git tag), then audited and is being
 rebuilt honestly. See the audit + milestone plan referenced at the bottom.
 
-> **Status:** demo. Listings are illustrative sample data, not a verified live
-> directory. The app shows an in-product disclaimer pointing to 211 / 988.
+> **Status:** demo (Gainesville, FL). Listings are real, recently-verified local
+> resources shown as a demonstration — not a guaranteed-current live directory. The app
+> shows an in-product disclaimer pointing to 211 / 988.
 
-## Architecture (what actually exists in `src/`, as of the M1 honesty reset)
-- `components/`: `Layout`, `Navbar`, `Header`, `Footer`, `FilterPanel`, `ResourceCard`,
-  `ResourceDetailModal`. (No map component yet — see plan M2. No accessibility toolbar
-  yet — see plan M3.)
-- `services/resourceService.ts`: client-side search/filter/sort + a Haversine
-  `calculateDistance` (the distance-sort path is not yet wired into the UI — plan M2).
-- `data/resources.ts`: sample dataset (currently fabricated placeholder data — being
-  replaced with verified real resources in plan M2).
-- `hooks/useAccessibility.ts`: contrast / text-size state hook (present but **not yet
-  wired into the rendered UI** — plan M3).
+## Architecture (what actually exists in `src/`, as of M2)
+- `components/`: `Layout`, `Navbar`, `Header`, `Footer`, `FilterPanel`, `LocationControl`,
+  `ResourceCard`, `ResourceMap` (react-leaflet), `ResourceDetailModal`. (No accessibility
+  toolbar yet — see plan M3.)
+- `services/resourceService.ts`: client-side search/filter/sort incl. distance sort + a
+  Haversine `calculateDistance`; annotates `distanceMiles` when a user location is set.
+- `data/resources.ts`: 11 real, verified Gainesville-area resources (source of record:
+  `VERIFIED-ORGS.md`). `data/gainesvilleZips.ts`: offline ZIP centroids for the near-me fallback.
+- `hooks/useGeolocation.ts`: opt-in geolocation (GPS + on-device ZIP), never fires on mount.
+  `hooks/useAccessibility.ts`: contrast / text-size state hook (present but **not yet wired
+  into the rendered UI** — plan M3).
 - `types/index.ts`: `Resource`, `Location`, `FilterOptions`, accessibility types.
 - `tests/`: Vitest + Testing Library component tests.
 
@@ -49,7 +51,8 @@ this document will be updated from the code, never ahead of it.)
 ## Honest status of the original acceptance criteria
 - Builds cleanly (`npm run build`): **yes.**
 - Search filters by keyword / tag / category: **yes.**
-- Detail view with full info + contact links: **yes** (map markers: not yet — M2).
+- Detail view with full info + contact links: **yes**; interactive map with markers +
+  opt-in "near me" (GPS / on-device ZIP) + distance sort: **yes** (M2).
 - Fully responsive: **largely**, pending the M3/M4 accessibility + styling pass.
 - Reusable components + automated tests for search/filter: **partial** — real unit tests
   are being (re)built in plan M3; the original agent-written E2E suite was test theater

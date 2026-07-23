@@ -29,6 +29,13 @@ export const App: React.FC = () => {
     else setSortBy((s) => (s === 'distance' ? 'relevance' : s));
   }, [location]);
 
+  // Reset the sort synchronously on clear so the sort <select> is never left showing
+  // "distance" after its option is removed (avoids a one-commit value/option mismatch).
+  const handleClearLocation = () => {
+    clear();
+    setSortBy((s) => (s === 'distance' ? 'relevance' : s));
+  };
+
   const filteredResources = useMemo(() => {
     return searchResources(
       searchQuery,
@@ -72,7 +79,7 @@ export const App: React.FC = () => {
           error={error}
           onRequestGps={requestGps}
           onSetZip={setFromZip}
-          onClear={clear}
+          onClear={handleClearLocation}
         />
 
         {/* Search & Filter Controls */}
@@ -111,16 +118,8 @@ export const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Results */}
-        {view === 'map' ? (
-          <ResourceMap resources={filteredResources} userLocation={location} onSelect={setSelectedResource} />
-        ) : filteredResources.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredResources.map((resource) => (
-              <ResourceCard key={resource.id} resource={resource} onSelect={(res) => setSelectedResource(res)} />
-            ))}
-          </div>
-        ) : (
+        {/* Results -- empty state wins in BOTH views so the 211 fallback is never lost */}
+        {filteredResources.length === 0 ? (
           <div className="bg-white rounded-2xl p-12 text-center border border-slate-200 shadow-sm">
             <AlertCircle className="w-12 h-12 text-slate-400 mx-auto mb-3" />
             <h3 className="text-lg font-bold text-slate-900 mb-1">No resources found</h3>
@@ -136,6 +135,14 @@ export const App: React.FC = () => {
             >
               Reset Filters
             </button>
+          </div>
+        ) : view === 'map' ? (
+          <ResourceMap resources={filteredResources} userLocation={location} onSelect={setSelectedResource} />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredResources.map((resource) => (
+              <ResourceCard key={resource.id} resource={resource} onSelect={(res) => setSelectedResource(res)} />
+            ))}
           </div>
         )}
 

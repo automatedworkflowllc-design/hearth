@@ -31,7 +31,7 @@ const pinIcon = L.divIcon({
   popupAnchor: [0, -28],
 });
 
-function FitToMarkers({ points }: { points: [number, number][] }) {
+function FitToMarkers({ points, fitKey }: { points: [number, number][]; fitKey: string }) {
   const map = useMap();
   useEffect(() => {
     if (points.length === 0) {
@@ -41,7 +41,11 @@ function FitToMarkers({ points }: { points: [number, number][] }) {
     } else {
       map.fitBounds(points, { padding: [40, 40] });
     }
-  }, [points, map]);
+    // Keyed on fitKey (the RESOURCE coordinate set) only -- deliberately NOT on the
+    // user's location (so which OSM tiles load never depends on where they are) and NOT
+    // on array identity (so re-sorting doesn't discard the user's manual pan/zoom).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fitKey, map]);
   return null;
 }
 
@@ -53,11 +57,11 @@ export const ResourceMap: React.FC<ResourceMapProps> = ({ resources, userLocatio
         .filter((x): x is { r: Resource; pt: [number, number] } => x.pt !== null),
     [resources]
   );
-  const points = useMemo(() => {
-    const pts = pinned.map((p) => p.pt);
-    if (userLocation) pts.push([userLocation.lat, userLocation.lng]);
-    return pts;
-  }, [pinned, userLocation]);
+  // Fit to RESOURCE locations only. The user's location is a render-only marker and is
+  // deliberately excluded from the viewport so the set of OSM tiles requested never
+  // depends on where the user is (privacy: nothing about their position reaches the tile server).
+  const fitPoints = useMemo(() => pinned.map((p) => p.pt), [pinned]);
+  const fitKey = useMemo(() => fitPoints.map((p) => p.join(',')).sort().join('|'), [fitPoints]);
 
   const unmapped = resources.length - pinned.length;
 
@@ -69,7 +73,7 @@ export const ResourceMap: React.FC<ResourceMapProps> = ({ resources, userLocatio
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <FitToMarkers points={points} />
+          <FitToMarkers points={fitPoints} fitKey={fitKey} />
           {userLocation && (
             <CircleMarker
               center={[userLocation.lat, userLocation.lng]}

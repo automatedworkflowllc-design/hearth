@@ -1,9 +1,11 @@
 import type { Resource } from '../types/index.ts';
 
 // Verified real Gainesville, FL community resources (source of record: VERIFIED-ORGS.md).
-// Every name/phone/address was confirmed against the org's own official site on 2026-07-22
-// (two highest-stakes items re-verified by hand: the St. Francis House closure -> dropped,
-// and the Peaceful Paths DV hotline). Coordinates are geocoded from the verified street
+// Names/phones/addresses were confirmed against each org's own official site on 2026-07-22,
+// with disclosed exceptions: Three Rivers Legal's phone came from authoritative directories
+// (its site blocked automated reads) and is marked pending a human call; Equal Access
+// publishes no phone (shown as walk-in). Two highest-stakes items were re-verified by hand:
+// the St. Francis House closure -> dropped, and the Peaceful Paths DV hotline. Coordinates are geocoded from the verified street
 // addresses via OpenStreetMap, never hand-guessed; the one exception is flagged inline.
 // This is a DEMO dataset for a single city; the ResourceProvider seam is where a real
 // national 211 / Open Referral HSDS feed would plug in (see PROJECT.md / case study).
@@ -176,7 +178,7 @@ export const mockResources: Resource[] = [
     location: { city: 'Gainesville', state: 'FL', zipCode: '32653', lat: 29.7033710, lng: -82.3516130 },
     phone: '(352) 377-8255',
     website: 'https://www.peacefulpaths.org',
-    hours: '24-hour crisis hotline; admin Mon/Thu/Fri 9-5, Tue/Wed 9-6',
+    hours: '24-hour crisis hotline (call anytime); office hours vary, call to confirm',
     eligibility: 'Survivors of domestic abuse and their children.',
     availability: '24/7 hotline',
     lastVerified: '2026-07-22',
