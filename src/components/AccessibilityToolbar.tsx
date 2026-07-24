@@ -20,7 +20,7 @@ const SIZES: { id: TextSize; label: string; a11y: string }[] = [
 export const AccessibilityToolbar: React.FC<AccessibilityState> = ({ textSize, setTextSize }) => {
   return (
     <div className="flex items-center gap-1.5" role="group" aria-label="Text size">
-      <span className="hidden sm:inline text-xs font-medium text-blue-200">Text size</span>
+      <span className="hidden sm:inline text-xs font-medium text-on-nav/80">Text size</span>
       <div className="flex items-center gap-0.5">
         {SIZES.map((s) => {
           const active = textSize === s.id;
@@ -32,7 +32,7 @@ export const AccessibilityToolbar: React.FC<AccessibilityState> = ({ textSize, s
               aria-pressed={active}
               aria-label={s.a11y}
               className={`min-w-[2rem] rounded-md px-2 py-1.5 text-xs font-bold transition focus:outline-none focus:ring-2 focus:ring-white ${
-                active ? 'bg-white text-brand-900' : 'bg-brand-800 text-white hover:bg-brand-700'
+                active ? 'bg-surface text-nav' : 'bg-nav-hover text-white hover:bg-nav-hover'
               }`}
             >
               {s.label}

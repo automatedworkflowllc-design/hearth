@@ -53,18 +53,18 @@ export const LocationControl: React.FC<LocationControlProps> = ({
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+    <div className="rounded-xl border border-border bg-surface px-4 py-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <button
           onClick={onRequestGps}
           disabled={status === 'locating'}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 disabled:opacity-60"
         >
           <LocateFixed className="h-4 w-4" aria-hidden="true" />
           {status === 'locating' ? 'Locating…' : 'Use my location'}
         </button>
 
-        <span className="text-xs font-medium text-slate-400 sm:px-1">or</span>
+        <span className="text-xs font-medium text-muted sm:px-1">or</span>
 
         <form onSubmit={submitZip} className="flex items-center gap-2">
           <label htmlFor="zip-input" className="sr-only">
@@ -76,18 +76,18 @@ export const LocationControl: React.FC<LocationControlProps> = ({
             value={zip}
             onChange={(e) => setZip(e.target.value)}
             placeholder="ZIP code"
-            className="w-28 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-28 rounded-lg border border-border bg-app px-3 py-2 text-sm text-main placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary"
           />
           <button
             type="submit"
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="rounded-lg border border-border px-3 py-2 text-sm font-semibold text-main transition hover:bg-card-hover focus:outline-none focus:ring-2 focus:ring-primary"
           >
             Set
           </button>
         </form>
       </div>
 
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-2 text-xs text-muted">
         Used on this device to sort resources by distance — your location is never sent to us or stored.
         (The map view loads map tiles from OpenStreetMap, which like any website sees your IP address.)
       </p>

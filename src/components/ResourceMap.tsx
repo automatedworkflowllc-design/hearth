@@ -68,7 +68,7 @@ export const ResourceMap: React.FC<ResourceMapProps> = ({ resources, userLocatio
 
   return (
     <div>
-      <div className="h-[460px] w-full overflow-hidden rounded-2xl border border-slate-200">
+      <div className="h-[460px] w-full overflow-hidden rounded-2xl border border-border">
         <MapContainer center={GAINESVILLE_CENTER} zoom={12} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -88,11 +88,11 @@ export const ResourceMap: React.FC<ResourceMapProps> = ({ resources, userLocatio
             <Marker key={r.id} position={pt} icon={pinIcon}>
               <Popup>
                 <div className="min-w-[180px]">
-                  <p className="text-sm font-bold text-slate-900">{r.name}</p>
-                  {r.address && <p className="mt-0.5 text-xs text-slate-600">{r.address}</p>}
+                  <p className="text-sm font-bold text-main">{r.name}</p>
+                  {r.address && <p className="mt-0.5 text-xs text-muted">{r.address}</p>}
                   <button
                     onClick={() => onSelect(r)}
-                    className="mt-2 rounded-md bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-blue-700"
+                    className="mt-2 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-white hover:bg-primary-hover"
                   >
                     View details
                   </button>
@@ -103,7 +103,7 @@ export const ResourceMap: React.FC<ResourceMapProps> = ({ resources, userLocatio
         </MapContainer>
       </div>
       {unmapped > 0 && (
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-xs text-muted">
           {unmapped} resource{unmapped === 1 ? '' : 's'} without a fixed street location (e.g. phone/referral-only) {unmapped === 1 ? 'is' : 'are'} not shown on the map — see the list view.
         </p>
       )}

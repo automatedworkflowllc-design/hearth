@@ -65,17 +65,17 @@ export const App: React.FC = () => {
           <a className="font-semibold underline" href="tel:988">988</a> (crisis &amp; suicide lifeline).
         </div>
 
-        {/* Banner Hero */}
-        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
-          <div className="relative z-10 max-w-2xl">
+        {/* Hero -- solid warm teal (token-driven, flips in high-contrast), ember accent bar. */}
+        <div className="bg-nav text-on-nav rounded-2xl p-6 sm:p-8 shadow-sm">
+          <div className="max-w-2xl">
+            <div className="mb-3 h-1 w-10 rounded-full bg-accent" aria-hidden="true"></div>
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">
               Find local support services
             </h2>
-            <p className="text-blue-100 text-sm sm:text-base font-normal leading-relaxed">
+            <p className="text-on-nav/85 text-sm sm:text-base font-normal leading-relaxed">
               Search by category or location to find food pantries, emergency shelters, medical clinics, and legal aid in the Gainesville, FL area.
             </p>
           </div>
-          <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
         </div>
 
         {/* Location control (opt-in geolocation / on-device ZIP) */}
@@ -102,12 +102,12 @@ export const App: React.FC = () => {
 
         {/* View toggle */}
         <div className="flex items-center justify-end">
-          <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1" role="group" aria-label="View mode">
+          <div className="inline-flex rounded-lg border border-border bg-surface p-1" role="group" aria-label="View mode">
             <button
               onClick={() => setView('list')}
               aria-pressed={view === 'list'}
               className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                view === 'list' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+                view === 'list' ? 'bg-primary text-white' : 'text-muted hover:bg-card-hover'
               }`}
             >
               <ListIcon className="h-4 w-4" aria-hidden="true" /> List
@@ -116,7 +116,7 @@ export const App: React.FC = () => {
               onClick={() => setView('map')}
               aria-pressed={view === 'map'}
               className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                view === 'map' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+                view === 'map' ? 'bg-primary text-white' : 'text-muted hover:bg-card-hover'
               }`}
             >
               <MapIcon className="h-4 w-4" aria-hidden="true" /> Map
@@ -126,10 +126,10 @@ export const App: React.FC = () => {
 
         {/* Results -- empty state wins in BOTH views so the 211 fallback is never lost */}
         {filteredResources.length === 0 ? (
-          <div className="bg-white rounded-2xl p-12 text-center border border-slate-200 shadow-sm">
-            <AlertCircle className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-            <h3 className="text-lg font-bold text-slate-900 mb-1">No resources found</h3>
-            <p className="text-slate-600 text-sm max-w-md mx-auto mb-4">
+          <div className="bg-surface rounded-2xl p-12 text-center border border-border shadow-sm">
+            <AlertCircle className="w-12 h-12 text-muted mx-auto mb-3" />
+            <h3 className="text-lg font-bold text-main mb-1">No resources found</h3>
+            <p className="text-muted text-sm max-w-md mx-auto mb-4">
               No resources match your current search. Try a different keyword or category, or dial 211 for a live referral.
             </p>
             <button
@@ -137,7 +137,7 @@ export const App: React.FC = () => {
                 setSearchQuery('');
                 setSelectedCategory('all');
               }}
-              className="px-4 py-2 bg-blue-600 text-white font-semibold text-xs rounded-xl hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-primary text-white font-semibold text-xs rounded-xl hover:bg-primary-hover transition-colors"
             >
               Reset Filters
             </button>

@@ -32,18 +32,18 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   distanceAvailable = false,
 }) => {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6">
+    <div className="bg-surface rounded-2xl shadow-sm border border-border p-5 mb-6">
       {/* Search Bar */}
       <div className="mb-5">
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search by name, service, or keyword (e.g. food, shelter, legal)..."
             aria-label="Search resources"
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm font-medium"
+            className="w-full pl-12 pr-4 py-3 bg-app border border-border rounded-xl text-main placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all text-sm font-medium"
           />
         </div>
       </div>
@@ -58,8 +58,8 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               onClick={() => onCategoryChange(cat.id)}
               className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
                 isActive
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'bg-card-hover text-main hover:bg-card-hover'
               }`}
             >
               {cat.label}
@@ -69,19 +69,19 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
       </div>
 
       {/* Filter Stats & Sort */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs text-slate-600">
-        <span className="font-semibold text-slate-900">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3 border-t border-border text-xs text-muted">
+        <span className="font-semibold text-main">
           Showing {totalResultsCount} resource{totalResultsCount === 1 ? '' : 's'} in the Gainesville, FL area
         </span>
 
         <div className="flex items-center gap-2">
-          <SlidersHorizontal className="w-4 h-4 text-slate-400" />
+          <SlidersHorizontal className="w-4 h-4 text-muted" />
           <span className="font-medium">Sort by:</span>
           <select
             value={sortBy}
             onChange={(e) => onSortChange(e.target.value as 'relevance' | 'name' | 'distance')}
             aria-label="Sort resources"
-            className="bg-slate-50 border border-slate-200 text-slate-900 rounded-lg px-2.5 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-app border border-border text-main rounded-lg px-2.5 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="relevance">Relevance</option>
             <option value="name">Name (A-Z)</option>

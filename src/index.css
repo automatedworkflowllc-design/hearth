@@ -23,11 +23,14 @@ html[data-contrast="standard"] {
   --focus-ring-color: #0f766e;
   --focus-ring-width: 3px;
   --shadow-card: 0 1px 3px 0 rgb(28 25 23 / 0.08), 0 1px 2px -1px rgb(28 25 23 / 0.08);
+  --bg-nav: #134e4a;          /* deep teal bar (teal-900) */
+  --bg-nav-hover: #0f766e;    /* teal-700 */
+  --text-on-nav: #ffffff;
 }
 
-/* High-contrast token set (targets ~7:1). Defined but NOT yet consumed by components
-   (they still use hardcoded Tailwind colors), so the user-facing contrast control is
-   deferred to M4's token swap rather than shipped as a near-cosmetic filter. */
+/* High-contrast token set (~7:1+, black/white with yellow+cyan accents). Consumed by the
+   token-driven components as of M4b, so toggling contrast genuinely flips every surface --
+   no filter hack. */
 html[data-contrast="high-contrast"],
 .high-contrast {
   --bg-app: #000000;
@@ -35,7 +38,7 @@ html[data-contrast="high-contrast"],
   --bg-card: #000000;
   --bg-card-hover: #121212;
   --text-main: #ffffff;
-  --text-muted: #ffffff;
+  --text-muted: #f1f1f1;
   --text-inverse: #000000;
   --border-main: #ffffff;
   --border-focus: #ffff00;
@@ -45,7 +48,9 @@ html[data-contrast="high-contrast"],
   --focus-ring-color: #00ffff;
   --focus-ring-width: 4px;
   --shadow-card: none;
-  filter: contrast(130%);
+  --bg-nav: #000000;
+  --bg-nav-hover: #1a1a1a;
+  --text-on-nav: #ffffff;
 }
 
 html[data-contrast="high-contrast"] body,

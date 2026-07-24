@@ -2,7 +2,7 @@ import React from 'react';
 
 export const Header: React.FC = () => {
   return (
-    <header className="bg-gradient-to-r from-brand-800 to-brand-600 text-white py-8 px-4 sm:px-6 lg:px-8 shadow-inner" role="banner">
+    <header className="bg-gradient-to-r from-nav to-primary text-white py-8 px-4 sm:px-6 lg:px-8 shadow-inner" role="banner">
       <div className="max-w-7xl mx-auto text-center sm:text-left">
         <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
           Find Local Support & Community Services
