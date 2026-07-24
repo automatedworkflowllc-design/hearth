@@ -67,4 +67,15 @@ describe('accessibility wiring (was dead code before M3)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Extra large text size' }));
     expect(document.documentElement.dataset.textSize).toBe('extra-large');
   });
+
+  it('high-contrast toggle flips data-contrast on <html> (re-added in M4b, now real)', () => {
+    render(<App />);
+    const toggle = screen.getByRole('button', { name: /high contrast/i });
+    expect(document.documentElement.dataset.contrast).toBe('standard');
+    fireEvent.click(toggle);
+    expect(document.documentElement.dataset.contrast).toBe('high-contrast');
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(toggle);
+    expect(document.documentElement.dataset.contrast).toBe('standard');
+  });
 });

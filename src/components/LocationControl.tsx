@@ -37,14 +37,14 @@ export const LocationControl: React.FC<LocationControlProps> = ({
   if (location) {
     const where = location.source === 'gps' ? 'your location' : `ZIP ${location.label}`;
     return (
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-900">
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/40 bg-card-hover px-4 py-2.5 text-sm text-main">
         <span className="flex items-center gap-2">
           <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />
           Sorting by distance from {where}.
         </span>
         <button
           onClick={onClear}
-          className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold text-primary hover:bg-card-hover focus:outline-none focus:ring-2 focus:ring-primary"
         >
           <X className="h-3.5 w-3.5" aria-hidden="true" /> Clear
         </button>
@@ -58,7 +58,7 @@ export const LocationControl: React.FC<LocationControlProps> = ({
         <button
           onClick={onRequestGps}
           disabled={status === 'locating'}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-inverse transition hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 disabled:opacity-60"
         >
           <LocateFixed className="h-4 w-4" aria-hidden="true" />
           {status === 'locating' ? 'Locating…' : 'Use my location'}
@@ -76,7 +76,7 @@ export const LocationControl: React.FC<LocationControlProps> = ({
             value={zip}
             onChange={(e) => setZip(e.target.value)}
             placeholder="ZIP code"
-            className="w-28 rounded-lg border border-border bg-app px-3 py-2 text-sm text-main placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-28 rounded-lg border border-border bg-app px-3 py-2 text-sm text-main placeholder:text-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
           />
           <button
             type="submit"

@@ -57,8 +57,9 @@ export const App: React.FC = () => {
   return (
     <Layout accessibility={a11y}>
       <div className="space-y-6">
-        {/* Demo disclaimer: sample data, real crisis lines. */}
-        <div role="alert" className="bg-amber-50 border border-amber-300 text-amber-900 rounded-xl px-4 py-3 text-sm">
+        {/* Demo disclaimer: sample data, real crisis lines. Token-driven + ember accent so it
+            flips cleanly in high-contrast instead of staying a light box on a black page. */}
+        <div role="alert" className="bg-card-hover border-l-4 border-accent text-main rounded-xl px-4 py-3 text-sm">
           <strong>Demo directory.</strong> These are real, recently-verified Gainesville, FL resources shown as a
           demonstration, not a guaranteed-current live directory. For real, current help right now, call{' '}
           <a className="font-semibold underline" href="tel:211">211</a> (community services) or{' '}
@@ -107,7 +108,7 @@ export const App: React.FC = () => {
               onClick={() => setView('list')}
               aria-pressed={view === 'list'}
               className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                view === 'list' ? 'bg-primary text-white' : 'text-muted hover:bg-card-hover'
+                view === 'list' ? 'bg-primary text-inverse' : 'text-muted hover:bg-card-hover'
               }`}
             >
               <ListIcon className="h-4 w-4" aria-hidden="true" /> List
@@ -116,7 +117,7 @@ export const App: React.FC = () => {
               onClick={() => setView('map')}
               aria-pressed={view === 'map'}
               className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                view === 'map' ? 'bg-primary text-white' : 'text-muted hover:bg-card-hover'
+                view === 'map' ? 'bg-primary text-inverse' : 'text-muted hover:bg-card-hover'
               }`}
             >
               <MapIcon className="h-4 w-4" aria-hidden="true" /> Map
@@ -137,7 +138,7 @@ export const App: React.FC = () => {
                 setSearchQuery('');
                 setSelectedCategory('all');
               }}
-              className="px-4 py-2 bg-primary text-white font-semibold text-xs rounded-xl hover:bg-primary-hover transition-colors"
+              className="px-4 py-2 bg-primary text-inverse font-semibold text-xs rounded-xl hover:bg-primary-hover transition-colors"
             >
               Reset Filters
             </button>

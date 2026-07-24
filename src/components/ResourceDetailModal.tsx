@@ -170,7 +170,7 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resour
               href={resource.website}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full p-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary-hover transition-colors mt-2 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="flex items-center justify-center gap-2 w-full p-3 bg-primary text-inverse rounded-xl font-semibold hover:bg-primary-hover transition-colors mt-2 focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <Globe className="w-4 h-4" aria-hidden="true" />
               Visit Official Website

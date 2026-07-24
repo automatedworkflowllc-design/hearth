@@ -43,7 +43,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search by name, service, or keyword (e.g. food, shelter, legal)..."
             aria-label="Search resources"
-            className="w-full pl-12 pr-4 py-3 bg-app border border-border rounded-xl text-main placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all text-sm font-medium"
+            className="w-full pl-12 pr-4 py-3 bg-app border border-border rounded-xl text-main placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:bg-surface transition-all text-sm font-medium"
           />
         </div>
       </div>
@@ -58,7 +58,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               onClick={() => onCategoryChange(cat.id)}
               className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
                 isActive
-                  ? 'bg-primary text-white shadow-sm'
+                  ? 'bg-primary text-inverse shadow-sm'
                   : 'bg-card-hover text-main hover:bg-card-hover'
               }`}
             >

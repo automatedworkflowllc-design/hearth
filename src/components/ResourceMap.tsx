@@ -24,7 +24,7 @@ const pinIcon = L.divIcon({
   className: 'resource-pin',
   html:
     '<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" ' +
-    'fill="#2563eb" stroke="#ffffff" stroke-width="1.5" aria-hidden="true">' +
+    'fill="#0f766e" stroke="#ffffff" stroke-width="1.5" aria-hidden="true">' +
     '<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>' +
     '<circle cx="12" cy="9" r="2.6" fill="#ffffff"/></svg>',
   iconSize: [30, 30],
@@ -92,7 +92,7 @@ export const ResourceMap: React.FC<ResourceMapProps> = ({ resources, userLocatio
                   {r.address && <p className="mt-0.5 text-xs text-muted">{r.address}</p>}
                   <button
                     onClick={() => onSelect(r)}
-                    className="mt-2 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-white hover:bg-primary-hover"
+                    className="mt-2 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-inverse hover:bg-primary-hover"
                   >
                     View details
                   </button>
