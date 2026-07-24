@@ -4,6 +4,10 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
+  // Relative base so one build works both at the domain root (local preview) and under a
+  // project subpath (GitHub Pages serves this at /hearth/). The app has no client-side
+  // router, so relative asset paths are safe.
+  base: './',
   plugins: [react()],
   resolve: {
     alias: {
