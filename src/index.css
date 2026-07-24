@@ -3,23 +3,26 @@
 @tailwind utilities;
 
 /* Standard Theme Variables */
+/* Hearth standard palette: warm teal primary + ember accent on warm (stone) neutrals.
+   AA-checked: text #1c1917 on white ~15:1; muted #57534e on white ~7:1; white on
+   teal-700 #0f766e ~5:1 (buttons); ember #ea580c reserved for non-text accents. */
 :root,
 html[data-contrast="standard"] {
-  --bg-app: #f8fafc;
+  --bg-app: #faf9f7;          /* warm off-white */
   --bg-surface: #ffffff;
   --bg-card: #ffffff;
-  --bg-card-hover: #f1f5f9;
-  --text-main: #0f172a;
-  --text-muted: #475569;
+  --bg-card-hover: #f5f3f0;
+  --text-main: #1c1917;       /* warm near-black (stone-900) */
+  --text-muted: #57534e;      /* stone-600 */
   --text-inverse: #ffffff;
-  --border-main: #e2e8f0;
-  --border-focus: #2563eb;
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-accent: #0d9488;
-  --focus-ring-color: #2563eb;
+  --border-main: #e7e5e4;     /* stone-200 */
+  --border-focus: #0f766e;
+  --color-primary: #0f766e;   /* warm teal (teal-700) */
+  --color-primary-hover: #115e59;
+  --color-accent: #ea580c;    /* ember (orange-600) */
+  --focus-ring-color: #0f766e;
   --focus-ring-width: 3px;
-  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-card: 0 1px 3px 0 rgb(28 25 23 / 0.08), 0 1px 2px -1px rgb(28 25 23 / 0.08);
 }
 
 /* High-contrast token set (targets ~7:1). Defined but NOT yet consumed by components
