@@ -1,4 +1,4 @@
-# Community Resource Hub
+# Hearth
 
 A React + Vite single-page app for discovering local community support resources
 (food pantries, shelters, health clinics, legal aid). **This repo is a teardown /
@@ -10,9 +10,9 @@ rebuilt honestly. See the audit + milestone plan referenced at the bottom.
 > resources shown as a demonstration — not a guaranteed-current live directory. The app
 > shows an in-product disclaimer pointing to 211 / 988.
 
-## Architecture (what actually exists in `src/`, as of M3)
+## Architecture (what actually exists in `src/`, as of M4b)
 - `components/`: `Layout`, `Navbar`, `Header`, `Footer`, `FilterPanel`, `LocationControl`,
-  `AccessibilityToolbar` (text-size), `ResourceCard`, `ResourceMap` (react-leaflet),
+  `AccessibilityToolbar` (text-size + real high-contrast), `ResourceCard`, `ResourceMap` (react-leaflet),
   `ResourceDetailModal` (a real focus-trapped dialog).
 - `services/resourceService.ts`: client-side search/filter/sort incl. distance sort + a
   Haversine `calculateDistance`; annotates `distanceMiles` when a user location is set.

@@ -20,6 +20,7 @@ html[data-contrast="standard"] {
   --color-primary: #0f766e;   /* warm teal (teal-700) */
   --color-primary-hover: #115e59;
   --color-accent: #ea580c;    /* ember (orange-600) */
+  --color-danger: #dc2626;    /* red-600, 4.83:1 on white */
   --focus-ring-color: #0f766e;
   --focus-ring-width: 3px;
   --shadow-card: 0 1px 3px 0 rgb(28 25 23 / 0.08), 0 1px 2px -1px rgb(28 25 23 / 0.08);
@@ -29,8 +30,10 @@ html[data-contrast="standard"] {
 }
 
 /* High-contrast token set (~7:1+, black/white with yellow+cyan accents). Consumed by the
-   token-driven components as of M4b, so toggling contrast genuinely flips every surface --
-   no filter hack. */
+   token-driven surfaces as of M4b -- backgrounds, text, borders, nav, buttons, banners, error
+   text, and the Leaflet map popup -- so toggling contrast flips the whole UI chrome (no filter
+   hack). Deliberate fixed-color exceptions: the category badges (color-coded, AA-legible in both
+   themes), small decorative aria-hidden icons, the map pin, and the OSM tiles themselves. */
 html[data-contrast="high-contrast"],
 .high-contrast {
   --bg-app: #000000;
@@ -45,6 +48,7 @@ html[data-contrast="high-contrast"],
   --color-primary: #ffff00;
   --color-primary-hover: #e6e600;
   --color-accent: #00ffff;
+  --color-danger: #ff8a8a;    /* light red, ~9:1 on black; default red-600 is only 4.35:1 there */
   --focus-ring-color: #00ffff;
   --focus-ring-width: 4px;
   --shadow-card: none;
@@ -85,4 +89,22 @@ body {
   width: 100%;
   height: 100%;
   z-index: 10;
+}
+
+/* Leaflet popup chrome must flip with the theme. Leaflet's own stylesheet hardcodes a white
+   popup background; the popup content uses the color tokens (text-main/text-muted), so without
+   this the resource name/address would render white-on-white in high-contrast (invisible). */
+/* Scoped under .leaflet-popup (specificity 0,2,0) so these beat Leaflet's own
+   .leaflet-popup-content-wrapper{background:white} rule, which is bundled AFTER index.css
+   and would otherwise win at equal specificity (verified in-browser: popup stayed white). */
+.leaflet-popup .leaflet-popup-content-wrapper,
+.leaflet-popup .leaflet-popup-tip {
+  background: var(--bg-surface);
+  color: var(--text-main);
+}
+.leaflet-popup .leaflet-popup-content-wrapper {
+  border: 1px solid var(--border-main);
+}
+.leaflet-popup .leaflet-popup-close-button {
+  color: var(--text-muted) !important;
 }

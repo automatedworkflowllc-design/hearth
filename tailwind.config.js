@@ -27,6 +27,7 @@ export default {
         primary: 'var(--color-primary)',
         'primary-hover': 'var(--color-primary-hover)',
         accent: 'var(--color-accent)',
+        danger: 'var(--color-danger)',
         border: 'var(--border-main)',
         nav: 'var(--bg-nav)',
         'nav-hover': 'var(--bg-nav-hover)',

@@ -22,9 +22,11 @@ const btn = (active: boolean) =>
  *
  * The high-contrast toggle is back as of M4b. It was pulled in the M3 review because at that
  * point NO component consumed the contrast tokens, so toggling only ran a weak filter(130%) --
- * announcing "high contrast" over a near-cosmetic change is an overclaim. Now every component
- * paints through the semantic tokens, so flipping data-contrast genuinely swaps all surfaces to
- * the ~7:1 black / yellow / cyan theme. The claim now matches the behavior.
+ * announcing "high contrast" over a near-cosmetic change is an overclaim. Now the token-driven
+ * surfaces (backgrounds, text, borders, nav, buttons, banners, error text, map popup) flip to
+ * the ~7:1 black/yellow/cyan theme. A few elements keep fixed colors by design -- the color-coded
+ * category badges (AA-legible in both themes) and small decorative icons -- so this is real,
+ * honestly-scoped contrast, not the "everything flips" the earlier wording implied.
  */
 export const AccessibilityToolbar: React.FC<AccessibilityState> = ({
   contrastMode,

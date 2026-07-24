@@ -92,7 +92,7 @@ export const LocationControl: React.FC<LocationControlProps> = ({
         (The map view loads map tiles from OpenStreetMap, which like any website sees your IP address.)
       </p>
       {(zipError || error) && (
-        <p className="mt-1 text-xs font-medium text-red-600" role="alert">
+        <p className="mt-1 text-xs font-medium text-danger" role="alert">
           {zipError || error}
         </p>
       )}
