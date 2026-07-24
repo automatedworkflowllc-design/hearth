@@ -81,4 +81,42 @@ Every screen keeps these regardless of visual direction:
    — confirm it works again at the start; the build needs live visual verification.
 7. Then decide the live-data source (211 vs Open Referral HSDS) to make the ResourceProvider real.
 
+## Critique fixes — MUST apply in the build (from the 2026-07-24 adversarial critique)
+The home preview was critiqued (a11y/contrast · craft · crisis-UX · honesty), verified adversarially
+(6 findings correctly refuted as mock-artifacts / mis-applied standards). Confirmed, transferable fixes:
+
+**Accessible palette (the warm colors fail WCAG AA as text — this is load-bearing):**
+- `--coral-text: #c9472f` for ALL coral text/CTA fills (white-on-#c9472f = 4.74:1 ✓). Reserve bright
+  `--coral #ee6c4d` for decorative/glow/large-fill ONLY — never text, never a white-text button.
+- Food category → warm brown `#8a4a12` (NOT sage green — reserve green for status only).
+- Chips: open-now text `#35684a` on `#e7f1ea`; free text `#7a3d0f` on `#fbeee0`.
+- Never ad-hoc light text — hint/microcopy use `--ink2 #6b5b63`. Tokenize the app border (`--line3 #d8c4b2`).
+- Re-verify EVERY final text/bg pair ≥4.5:1 (≥3:1 large ≥24px / bold).
+
+**Accessibility (build):** global `:focus-visible` ring on every interactive; use real `<a>/<button>`
+(mock used spans), pad primary CTAs toward ~44px; replace ALL emoji icons with an inline-SVG set
+(currentColor) — cross-platform + brand-consistent; keep `aria-hidden` on decorative glyphs; give the
+988 bar a landmark role + accessible name, persistent across scroll/routes.
+
+**Safety / copy (some were real bugs):** 911 for immediate danger, 988 only for "need to talk," and
+surface the DV hotline **1-800-799-7233** (the Quick-Exit audience). Calm "quiet-persistent" framing —
+no pulsing alarm. Quick Exit must be **sticky/fixed**, unambiguous ("Leave quickly" + door icon), fire
+on **ESC** → neutral site, plus a "clear your history" link. Language switcher **visible on mobile**
+(never `.hideSm`). Per-card modality = reveal call/text/chat (not phone-only); one clear primary
+("What to expect →"). Add one-tap "Use my location" (with privacy note); spell out cryptic chips.
+
+**Honesty:** "verified" must carry a date (HSDS last-updated) or soften to "listed from public
+sources." Scope free/private to Hearth's OWN behavior ("Always free to search · no account · no
+tracking") — never imply every org is free; drop absolute "always" on privacy unless guaranteed with
+zero third-party requests. Distance precision must match input (ZIP-centroid → "~1 mi", not "1.2 mi").
+Every operational chip (Walk-in / 24-7 / EN·ES / beds) is a dated verified field or it's omitted;
+"Call to confirm" on high-stakes ones.
+
+**Craft:** reserve coral for the primary CTA + one accent (demote secondary links to plum/ink); define
+a small type-scale token set + snap sizes; consistent radius (12/18/22 + pills).
+
+**Do NOT chase (correctly refuted):** the "44px target-size = AA" claim (spacing exception is met; the
+padding is a nice-to-have, not required), an sr-only heading on the stats band (AAA), and "open-now
+implies real-time" (intended pattern; the freshness pipeline covers it).
+
 Full context + history is in the durable memory: `antigrav-community-hub.md`.
