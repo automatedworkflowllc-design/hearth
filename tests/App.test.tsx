@@ -16,29 +16,36 @@ vi.mock('leaflet', () => ({ default: { divIcon: () => ({}) } }));
 
 import App from '../src/App';
 
+// Resources now load through the ResourceProvider async boundary (useResources), so the first
+// render shows a loading state; findByText waits for the (immediate) static provider to resolve.
+const RESOURCE = 'Bread of the Mighty Food Bank';
+
 describe('App integration', () => {
-  it('renders the verified Gainesville resources', () => {
+  it('loads and renders the verified Gainesville resources via the ResourceProvider', async () => {
     render(<App />);
-    expect(screen.getByText('Bread of the Mighty Food Bank')).toBeInTheDocument();
+    expect(await screen.findByText(RESOURCE)).toBeInTheDocument();
     expect(screen.getByText(/Showing 11 resources in the Gainesville, FL area/i)).toBeInTheDocument();
   });
 
-  it('filters resources by search query', () => {
+  it('filters resources by search query', async () => {
     render(<App />);
+    await screen.findByText(RESOURCE);
     fireEvent.change(screen.getByLabelText(/search resources/i), { target: { value: 'peaceful' } });
     expect(screen.getByText(/Peaceful Paths/i)).toBeInTheDocument();
-    expect(screen.queryByText('Bread of the Mighty Food Bank')).not.toBeInTheDocument();
+    expect(screen.queryByText(RESOURCE)).not.toBeInTheDocument();
   });
 
-  it('filters resources by category pill', () => {
+  it('filters resources by category pill', async () => {
     render(<App />);
+    await screen.findByText(RESOURCE);
     fireEvent.click(screen.getByRole('button', { name: /legal aid/i }));
     expect(screen.getByText('Three Rivers Legal Services')).toBeInTheDocument();
-    expect(screen.queryByText('Bread of the Mighty Food Bank')).not.toBeInTheDocument();
+    expect(screen.queryByText(RESOURCE)).not.toBeInTheDocument();
   });
 
-  it('opens the detail dialog and closes it with Escape', () => {
+  it('opens the detail dialog and closes it with Escape', async () => {
     render(<App />);
+    await screen.findByText(RESOURCE);
     fireEvent.click(screen.getAllByRole('button', { name: /view full details/i })[0]);
     const dialog = screen.getByRole('dialog');
     expect(dialog).toHaveAttribute('aria-modal', 'true');
@@ -54,22 +61,25 @@ describe('accessibility wiring (was dead code before M3)', () => {
     localStorage.clear();
   });
 
-  it('skip link is the first focusable element and targets main content', () => {
+  it('skip link is the first focusable element and targets main content', async () => {
     const { container } = render(<App />);
+    await screen.findByText(RESOURCE); // flush the async resource load inside act()
     const first = container.querySelector('a[href], button, input, select, [tabindex]:not([tabindex="-1"])');
     expect(first).toHaveAttribute('href', '#main-content');
   });
 
-  it('text-size toolbar actually applies to <html> (hook is wired, not dead)', () => {
+  it('text-size toolbar actually applies to <html> (hook is wired, not dead)', async () => {
     render(<App />);
+    await screen.findByText(RESOURCE);
     fireEvent.click(screen.getByRole('button', { name: 'Large text size' }));
     expect(document.documentElement.dataset.textSize).toBe('large');
     fireEvent.click(screen.getByRole('button', { name: 'Extra large text size' }));
     expect(document.documentElement.dataset.textSize).toBe('extra-large');
   });
 
-  it('high-contrast toggle flips data-contrast on <html> (re-added in M4b, now real)', () => {
+  it('high-contrast toggle flips data-contrast on <html> (re-added in M4b, now real)', async () => {
     render(<App />);
+    await screen.findByText(RESOURCE);
     const toggle = screen.getByRole('button', { name: /high contrast/i });
     expect(document.documentElement.dataset.contrast).toBe('standard');
     fireEvent.click(toggle);

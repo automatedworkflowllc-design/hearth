@@ -8,7 +8,8 @@ import { ResourceMap } from './components/ResourceMap';
 import { useGeolocation } from './hooks/useGeolocation';
 import { useAccessibility } from './hooks/useAccessibility';
 import { searchResources } from './services/resourceService';
-import { mockResources } from './data/resources';
+import { useResources } from './hooks/useResources';
+import { staticProvider } from './providers/resourceProvider';
 import type { Resource } from './types/index';
 import { AlertCircle, List as ListIcon, Map as MapIcon } from 'lucide-react';
 
@@ -23,6 +24,9 @@ export const App: React.FC = () => {
 
   const { location, status, error, requestGps, setFromZip, clear } = useGeolocation();
   const a11y = useAccessibility();
+  // Resources arrive through the ResourceProvider seam (demo = staticProvider; a live 211/HSDS feed
+  // would swap in here with no other change). Async by design so static + live share one code path.
+  const { resources, status: dataStatus, error: dataError } = useResources(staticProvider);
 
   // When the user sets a location, default the sort to distance (unless they've chosen
   // name); when they clear it, fall back off distance. Never overrides an explicit choice.
@@ -50,9 +54,9 @@ export const App: React.FC = () => {
       [],
       location ?? undefined,
       sortBy,
-      mockResources
+      resources
     );
-  }, [searchQuery, selectedCategory, sortBy, location]);
+  }, [searchQuery, selectedCategory, sortBy, location, resources]);
 
   return (
     <Layout accessibility={a11y}>
@@ -125,8 +129,21 @@ export const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Results -- empty state wins in BOTH views so the 211 fallback is never lost */}
-        {filteredResources.length === 0 ? (
+        {/* Results -- loading/error (from the ResourceProvider async boundary) first, then the
+            empty state, which wins in BOTH views so the 211 fallback is never lost. */}
+        {dataStatus === 'loading' ? (
+          <div className="bg-surface rounded-2xl p-12 text-center border border-border shadow-sm">
+            <p className="text-muted text-sm" role="status">Loading resources…</p>
+          </div>
+        ) : dataStatus === 'error' ? (
+          <div role="alert" className="bg-surface rounded-2xl p-12 text-center border border-border shadow-sm">
+            <h3 className="text-lg font-bold text-main mb-1">Couldn't load the directory</h3>
+            <p className="text-muted text-sm max-w-md mx-auto">
+              {dataError} Please dial{' '}
+              <a className="text-primary font-semibold underline" href="tel:211">211</a> for a live referral.
+            </p>
+          </div>
+        ) : filteredResources.length === 0 ? (
           <div className="bg-surface rounded-2xl p-12 text-center border border-border shadow-sm">
             <AlertCircle className="w-12 h-12 text-muted mx-auto mb-3" />
             <h3 className="text-lg font-bold text-main mb-1">No resources found</h3>

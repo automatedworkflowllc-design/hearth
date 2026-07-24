@@ -56,17 +56,22 @@ The pattern is the point: **verification is the bottleneck, not generation.** Fa
 
 The demo is honestly scoped to verified Gainesville data — but the design anticipates more.
 
-The search / filter / sort / distance core is **data-source-agnostic**: `searchResources(...)` takes the resource list as a parameter, so the static dataset is *injected*, not baked into the query logic.
+The seam is real code, not a diagram. A `ResourceProvider` is any async source of `Resource[]`; a `useResources(provider)` hook loads from it; and the search / filter / sort / distance core (`searchResources`) takes that list as a parameter — so the data source is *injected*, never baked into the query logic or the UI.
 
 ```ts
-// today — the demo injects a verified static dataset:
-searchResources(query, category, 'all', [], location, sortBy, gainesvilleResources);
+// the entire contract a data source must satisfy:
+interface ResourceProvider {
+  load(): Promise<Resource[]>;
+}
 
-// tomorrow — inject a live national feed; the pipeline is unchanged:
-searchResources(query, category, 'all', [], location, sortBy, await hsdsProvider.near(location));
+// shipped today — the verified static Gainesville dataset:
+useResources(staticProvider);
+
+// going national is one line — same hook, a live source, nothing else changes:
+useResources(hsds211Provider);
 ```
 
-So going city-, state-, or nationwide is a **provider swap, not a rewrite**: introduce a `ResourceProvider` that reads from a live directory — e.g. a 211 feed or the [Open Referral **HSDS**](https://openreferral.org/) standard — and hand its results to the same UI and search core. That seam is the point of the whole exercise. (To be clear about scope: the demo ships the static provider; the async fetching/caching provider is *designed, not yet built*.)
+So expanding to another city, a state, or nationwide is a **provider swap, not a rewrite**: write one more implementation of that interface against a live directory — a 211 feed or the [Open Referral **HSDS**](https://openreferral.org/) standard — and pass it to `useResources`. **Honest scope:** the interface, the async hook, and the `staticProvider` all ship today (`src/providers/resourceProvider.ts`, `src/hooks/useResources.ts`); the *live-feed* provider is the documented next step — it needs a real endpoint and field mapping, and shipping a fake one would break the rule this whole project is about.
 
 ## Tech
 
