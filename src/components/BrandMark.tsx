@@ -6,21 +6,27 @@ interface BrandMarkProps {
 }
 
 /**
- * Hearth brand mark: a map pin (place) with a heart (care) -- a resource-finder for people
- * who need help, in one glyph that reads at 16px. The pin is `currentColor` so it inherits
- * the brand teal from context; the heart is a light cut-out. Mirrored exactly in
- * public/favicon.svg (which also fixes the previously-404'd favicon).
+ * Hearth brand mark: "the Ember" -- a warm flame with a heart glowing at its core.
+ * "hear-t-h = heart + warmth." Renders its own gradient (NOT currentColor-tinted, unlike
+ * the previous pin+heart mark) so it reads correctly on any background without relying on
+ * text-color context. Mirrored exactly in public/favicon.svg.
  */
 export const BrandMark: React.FC<BrandMarkProps> = ({ className, title = 'Hearth' }) => (
-  <svg viewBox="0 0 32 32" role="img" aria-label={title} className={className} xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 64 64" role="img" aria-label={title} className={className} xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="hearth-ember" cx="50%" cy="38%" r="65%">
+        <stop offset="0" stopColor="#f7c25a" />
+        <stop offset="0.6" stopColor="#ee6c4d" />
+        <stop offset="1" stopColor="#c9472f" />
+      </radialGradient>
+    </defs>
     <path
-      d="M16 3C10.48 3 6 7.48 6 13c0 7.5 10 16 10 16s10-8.5 10-16C26 7.48 21.52 3 16 3z"
-      fill="currentColor"
+      d="M32 7c1 8 6 12 10 17 4 5 5 9 5 13a15 15 0 0 1-30 0c0-5 2-8 5-11 0 3 1 5 3 6 3-9-1-14 7-25Z"
+      fill="url(#hearth-ember)"
     />
     <path
-      transform="translate(9.3 5.6) scale(0.56)"
-      d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-      fill="#f8fafc"
+      d="M32 44c-3.7-2.6-6-4.9-6-7.4a3.1 3.1 0 0 1 6-1 3.1 3.1 0 0 1 6 1c0 2.5-2.3 4.8-6 7.4Z"
+      fill="#ffffff"
     />
   </svg>
 );

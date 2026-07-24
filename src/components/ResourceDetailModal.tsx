@@ -89,7 +89,7 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resour
 
         {/* Header Badges */}
         <div className="flex items-center gap-2 mb-3">
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-primary/10 text-primary border border-primary/30">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-card-hover text-main border border-border">
             {resource.category}
           </span>
           {resource.availability && (
@@ -100,7 +100,7 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resour
         </div>
 
         {/* Title */}
-        <h2 id={titleId} className="text-2xl font-extrabold text-main mb-3">
+        <h2 id={titleId} className="font-display text-2xl font-extrabold text-main mb-3">
           {resource.name}
         </h2>
 
@@ -131,7 +131,7 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resour
 
           {resource.eligibility && (
             <div className="flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" aria-hidden="true" />
+              <CheckCircle2 className="w-5 h-5 text-[#35684a] shrink-0 mt-0.5" aria-hidden="true" />
               <div>
                 <strong className="block text-main font-semibold">Eligibility</strong>
                 <span className="text-muted">{resource.eligibility}</span>
@@ -148,7 +148,7 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resour
             {resource.phone && (
               <a
                 href={`tel:${resource.phone}`}
-                className="flex items-center gap-2 p-3 bg-primary/10 text-primary rounded-xl font-medium hover:bg-primary/20 transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
+                className="flex items-center gap-2 p-3 bg-surface border border-border text-primary rounded-xl font-medium hover:bg-card-hover transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <Phone className="w-4 h-4 shrink-0" aria-hidden="true" />
                 <span>{resource.phone}</span>

@@ -2,38 +2,53 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Standard Theme Variables */
-/* Hearth standard palette: warm teal primary + ember accent on warm (stone) neutrals.
-   AA-checked: text #1c1917 on white ~15:1; muted #57534e on white ~7:1; white on
-   teal-700 #0f766e ~5:1 (buttons); ember #ea580c reserved for non-text accents. */
+@import '@fontsource/bricolage-grotesque/500.css';
+@import '@fontsource/bricolage-grotesque/600.css';
+@import '@fontsource/bricolage-grotesque/800.css';
+@import '@fontsource/fraunces/600-italic.css';
+
+/* Standard Theme Variables -- "Hearth" warm/bold identity (2026-07-24 redesign).
+   AA-checked (relative-luminance formula, verified by an adversarial contrast review):
+   ink #241a22 on paper ~15:1; muted #6b5b63 on paper ~6:1; white on coral-primary
+   #c9472f ~4.8:1 (buttons); coral-primary as TEXT on paper/white ~4.5-4.8:1. Bright
+   amber #f2a93b is reserved for decorative fills/borders/glow ONLY -- it fails AA as
+   text and must never be used for text or a text-bearing button fill. */
 :root,
 html[data-contrast="standard"] {
-  --bg-app: #faf9f7;          /* warm off-white */
+  --bg-app: #fdf7f0;          /* warm paper */
   --bg-surface: #ffffff;
   --bg-card: #ffffff;
-  --bg-card-hover: #f5f3f0;
-  --text-main: #1c1917;       /* warm near-black (stone-900) */
-  --text-muted: #57534e;      /* stone-600 */
+  --bg-card-hover: #f8ecdf;   /* warm paper-2 tint */
+  --text-main: #241a22;       /* warm ink */
+  --text-muted: #6b5b63;      /* warm ink-2 */
   --text-inverse: #ffffff;
-  --border-main: #e7e5e4;     /* stone-200 */
-  --border-focus: #0f766e;
-  --color-primary: #0f766e;   /* warm teal (teal-700) */
-  --color-primary-hover: #115e59;
-  --color-accent: #ea580c;    /* ember (orange-600) */
+  --border-main: #ecdccd;
+  --border-focus: #5e2a4d;    /* plum */
+  --color-primary: #c9472f;   /* accessible coral -- CTAs, links, brand pop */
+  --color-primary-hover: #a83a1a;
+  --color-accent: #f2a93b;    /* amber -- decorative only (glow, bars, borders), never text */
   --color-danger: #dc2626;    /* red-600, 4.83:1 on white */
-  --focus-ring-color: #0f766e;
+  --focus-ring-color: #5e2a4d;
   --focus-ring-width: 3px;
-  --shadow-card: 0 1px 3px 0 rgb(28 25 23 / 0.08), 0 1px 2px -1px rgb(28 25 23 / 0.08);
-  --bg-nav: #134e4a;          /* deep teal bar (teal-900) */
-  --bg-nav-hover: #0f766e;    /* teal-700 */
+  --shadow-card: 0 1px 3px 0 rgb(36 26 34 / 0.08), 0 1px 2px -1px rgb(36 26 34 / 0.08);
+  --bg-nav: #3a1830;          /* plum-deep */
+  --bg-nav-hover: #5e2a4d;    /* plum */
   --text-on-nav: #ffffff;
+  --text-brand: #5e2a4d;      /* plum, for the serif accent line on the paper background */
+  --text-on-nav-muted: #e9dce4; /* ~11.7:1 on plum-deep. A real token, NOT text-on-nav/70:
+                                   Tailwind cannot apply an alpha modifier to a raw var() color,
+                                   so `text-on-nav/70` silently produced an invalid declaration
+                                   and fell back to inherited dark ink (invisible on the footer). */
 }
 
-/* High-contrast token set (~7:1+, black/white with yellow+cyan accents). Consumed by the
-   token-driven surfaces as of M4b -- backgrounds, text, borders, nav, buttons, banners, error
-   text, and the Leaflet map popup -- so toggling contrast flips the whole UI chrome (no filter
-   hack). Deliberate fixed-color exceptions: the category badges (color-coded, AA-legible in both
-   themes), small decorative aria-hidden icons, the map pin, and the OSM tiles themselves. */
+/* High-contrast token set (~7:1+, black/white with yellow+cyan accents) is intentionally
+   UNCHANGED by the redesign -- high-contrast mode is deliberately brand-agnostic maximum
+   contrast, not a themed variant. Consumed by the token-driven surfaces -- backgrounds,
+   text, borders, nav, buttons, banners, error text, and the Leaflet map popup -- so
+   toggling contrast flips the whole UI chrome (no filter hack). Deliberate fixed-color
+   exceptions: the category badges (color-coded, AA-legible in both themes), small
+   decorative aria-hidden icons, the map pin, the OSM tiles, and the hero glow (suppressed
+   entirely in high-contrast -- see .hearth-glow below). */
 html[data-contrast="high-contrast"],
 .high-contrast {
   --bg-app: #000000;
@@ -55,6 +70,8 @@ html[data-contrast="high-contrast"],
   --bg-nav: #000000;
   --bg-nav-hover: #1a1a1a;
   --text-on-nav: #ffffff;
+  --text-brand: #ffffff;        /* the plum accent would be invisible on black */
+  --text-on-nav-muted: #ffffff; /* max contrast in high-contrast mode -- no dimming */
 }
 
 html[data-contrast="high-contrast"] body,
@@ -82,6 +99,35 @@ body {
   background-color: var(--bg-app);
   color: var(--text-main);
   transition: background-color 0.2s ease, color 0.2s ease, font-size 0.2s ease;
+}
+
+/* Global keyboard-focus visibility (WCAG 2.4.7). One consistent ring, themed via the same
+   tokens as everything else, so it is visible on every surface in both themes. */
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* The amber "hearth glow" behind the hero headline -- decorative, non-text, aria-hidden in
+   markup. Suppressed entirely in high-contrast: a soft blurred glow has no place in a mode
+   whose whole point is stark maximum contrast. */
+.hearth-glow {
+  pointer-events: none;
+}
+html[data-contrast="high-contrast"] .hearth-glow,
+.high-contrast .hearth-glow {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hearth-glow {
+    animation: hearth-glow-drift 14s ease-in-out infinite alternate;
+  }
+}
+@keyframes hearth-glow-drift {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(-2%, 2%) scale(1.04); }
 }
 
 /* Leaflet map container styling */

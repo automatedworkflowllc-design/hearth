@@ -49,7 +49,7 @@ export const AccessibilityToolbar: React.FC<AccessibilityState> = ({
       </button>
 
       <div className="flex items-center gap-1.5" role="group" aria-label="Text size">
-        <span className="hidden sm:inline text-xs font-medium text-on-nav/80">Text size</span>
+        <span className="hidden sm:inline text-xs font-medium text-on-nav-muted">Text size</span>
         <div className="flex items-center gap-0.5">
           {SIZES.map((s) => (
             <button

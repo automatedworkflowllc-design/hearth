@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Layout from './components/Layout';
+import { Hero } from './components/Hero';
+import { SafetyBar } from './components/SafetyBar';
 import { FilterPanel } from './components/FilterPanel';
 import { ResourceCard } from './components/ResourceCard';
 import { ResourceDetailModal } from './components/ResourceDetailModal';
@@ -61,26 +63,18 @@ export const App: React.FC = () => {
   return (
     <Layout accessibility={a11y}>
       <div className="space-y-6">
-        {/* Demo disclaimer: sample data, real crisis lines. Token-driven + ember accent so it
-            flips cleanly in high-contrast instead of staying a light box on a black page. */}
+        {/* Crisis lines first: correctly scoped (911 danger / 988 talk / DV hotline), calm not alarming. */}
+        <SafetyBar />
+
+        {/* Hero owns the page's single <h1> and the real search input. */}
+        <Hero searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+
+        {/* Demo disclaimer -- honest about what this data is and points to a live human line. */}
         <div role="alert" className="bg-card-hover border-l-4 border-accent text-main rounded-xl px-4 py-3 text-sm">
           <strong>Demo directory.</strong> These are real, recently-verified Gainesville, FL resources shown as a
           demonstration, not a guaranteed-current live directory. For real, current help right now, call{' '}
           <a className="font-semibold underline" href="tel:211">211</a> (community services) or{' '}
           <a className="font-semibold underline" href="tel:988">988</a> (crisis &amp; suicide lifeline).
-        </div>
-
-        {/* Hero -- solid warm teal (token-driven, flips in high-contrast), ember accent bar. */}
-        <div className="bg-nav text-on-nav rounded-2xl p-6 sm:p-8 shadow-sm">
-          <div className="max-w-2xl">
-            <div className="mb-3 h-1 w-10 rounded-full bg-accent" aria-hidden="true"></div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">
-              Find local support services
-            </h2>
-            <p className="text-on-nav/85 text-sm sm:text-base font-normal leading-relaxed">
-              Search by category or location to find food pantries, emergency shelters, medical clinics, and legal aid in the Gainesville, FL area.
-            </p>
-          </div>
         </div>
 
         {/* Location control (opt-in geolocation / on-device ZIP) */}
@@ -93,10 +87,8 @@ export const App: React.FC = () => {
           onClear={handleClearLocation}
         />
 
-        {/* Search & Filter Controls */}
+        {/* Category + sort controls (search itself lives in the Hero). */}
         <FilterPanel
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
           selectedCategory={selectedCategory}
           onCategoryChange={setSelectedCategory}
           sortBy={sortBy}
@@ -107,11 +99,11 @@ export const App: React.FC = () => {
 
         {/* View toggle */}
         <div className="flex items-center justify-end">
-          <div className="inline-flex rounded-lg border border-border bg-surface p-1" role="group" aria-label="View mode">
+          <div className="inline-flex rounded-xl border border-border bg-surface p-1" role="group" aria-label="View mode">
             <button
               onClick={() => setView('list')}
               aria-pressed={view === 'list'}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-display text-xs font-bold transition ${
                 view === 'list' ? 'bg-primary text-inverse' : 'text-muted hover:bg-card-hover'
               }`}
             >
@@ -120,7 +112,7 @@ export const App: React.FC = () => {
             <button
               onClick={() => setView('map')}
               aria-pressed={view === 'map'}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-display text-xs font-bold transition ${
                 view === 'map' ? 'bg-primary text-inverse' : 'text-muted hover:bg-card-hover'
               }`}
             >
@@ -137,7 +129,7 @@ export const App: React.FC = () => {
           </div>
         ) : dataStatus === 'error' ? (
           <div role="alert" className="bg-surface rounded-2xl p-12 text-center border border-border shadow-sm">
-            <h3 className="text-lg font-bold text-main mb-1">Couldn't load the directory</h3>
+            <h2 className="font-display text-lg font-bold text-main mb-1">Couldn't load the directory</h2>
             <p className="text-muted text-sm max-w-md mx-auto">
               {dataError} Please dial{' '}
               <a className="text-primary font-semibold underline" href="tel:211">211</a> for a live referral.
@@ -146,7 +138,7 @@ export const App: React.FC = () => {
         ) : filteredResources.length === 0 ? (
           <div className="bg-surface rounded-2xl p-12 text-center border border-border shadow-sm">
             <AlertCircle className="w-12 h-12 text-muted mx-auto mb-3" />
-            <h3 className="text-lg font-bold text-main mb-1">No resources found</h3>
+            <h2 className="font-display text-lg font-bold text-main mb-1">No resources found</h2>
             <p className="text-muted text-sm max-w-md mx-auto mb-4">
               No resources match your current search. Try a different keyword or category, or dial 211 for a live referral.
             </p>
@@ -155,9 +147,9 @@ export const App: React.FC = () => {
                 setSearchQuery('');
                 setSelectedCategory('all');
               }}
-              className="px-4 py-2 bg-primary text-inverse font-semibold text-xs rounded-xl hover:bg-primary-hover transition-colors"
+              className="px-4 py-2.5 bg-primary text-inverse font-display font-bold text-xs rounded-xl hover:bg-primary-hover transition-colors"
             >
-              Reset Filters
+              Reset filters
             </button>
           </div>
         ) : view === 'map' ? (
@@ -169,6 +161,18 @@ export const App: React.FC = () => {
             ))}
           </div>
         )}
+
+        {/* Closing hope/community note -- the brand's voice, and honest about what is free:
+            Hearth itself, not every third-party organization's pricing. */}
+        <section className="rounded-2xl bg-card-hover px-6 py-8 sm:px-8">
+          <p className="font-serif text-xl italic leading-snug text-main sm:text-2xl max-w-2xl">
+            Asking for help is how a community takes care of its own.
+          </p>
+          <p className="mt-3 text-sm text-muted max-w-2xl">
+            Always free to search · no account · no tracking. Each listing shows when it was last
+            verified against the organization's own source.
+          </p>
+        </section>
 
         {/* Detail Modal */}
         <ResourceDetailModal resource={selectedResource} onClose={closeModal} />

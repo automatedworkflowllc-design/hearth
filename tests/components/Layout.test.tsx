@@ -4,7 +4,7 @@ import React from 'react';
 import Layout from '../../src/components/Layout';
 
 describe('Layout Component', () => {
-  it('renders skip link, navbar, header, footer, and child content', () => {
+  it('renders skip link, landmarks, and child content', () => {
     render(
       <Layout>
         <div data-testid="test-child">Child Content Test</div>
@@ -16,7 +16,8 @@ describe('Layout Component', () => {
     expect(skipLink).toBeInTheDocument();
     expect(skipLink).toHaveAttribute('href', '#main-content');
 
-    // 2. Verify ARIA Landmarks
+    // 2. Verify ARIA Landmarks. The page <h1> now lives in the App-level Hero, not in Layout
+    // (the old duplicate Header banner was removed), but the banner landmark still exists.
     expect(screen.getByRole('navigation', { name: /main navigation/i })).toBeInTheDocument();
     expect(screen.getByRole('banner')).toBeInTheDocument();
     expect(screen.getByRole('main')).toBeInTheDocument();
@@ -25,11 +26,15 @@ describe('Layout Component', () => {
     // 3. Verify Child Content
     expect(screen.getByTestId('test-child')).toBeInTheDocument();
     expect(screen.getByTestId('test-child')).toHaveTextContent('Child Content Test');
+  });
 
-    // 4. Verify Heading in Header
-    expect(
-      screen.getByRole('heading', { level: 1, name: /find local support & community services/i })
-    ).toBeInTheDocument();
+  it('renders the always-available Quick Exit escape control', () => {
+    render(
+      <Layout>
+        <div>Test Content</div>
+      </Layout>
+    );
+    expect(screen.getByRole('button', { name: /leave quickly/i })).toBeInTheDocument();
   });
 
   it('triggers search callback when search button is clicked in Navbar', () => {

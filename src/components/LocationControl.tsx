@@ -37,7 +37,7 @@ export const LocationControl: React.FC<LocationControlProps> = ({
   if (location) {
     const where = location.source === 'gps' ? 'your location' : `ZIP ${location.label}`;
     return (
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/40 bg-card-hover px-4 py-2.5 text-sm text-main">
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card-hover px-4 py-2.5 text-sm text-main">
         <span className="flex items-center gap-2">
           <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />
           Sorting by distance from {where}.

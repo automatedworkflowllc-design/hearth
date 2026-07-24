@@ -46,7 +46,7 @@ describe('App integration', () => {
   it('opens the detail dialog and closes it with Escape', async () => {
     render(<App />);
     await screen.findByText(RESOURCE);
-    fireEvent.click(screen.getAllByRole('button', { name: /view full details/i })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: /what to expect/i })[0]);
     const dialog = screen.getByRole('dialog');
     expect(dialog).toHaveAttribute('aria-modal', 'true');
     fireEvent.keyDown(document, { key: 'Escape' });

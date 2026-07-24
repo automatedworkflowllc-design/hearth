@@ -9,6 +9,10 @@ export type ResourceLoadStatus = 'loading' | 'ready' | 'error';
  * static demo dataset and a future live feed share one code path: the rest of the app only ever sees
  * `resources` (a Resource[]) plus a status, exactly as it would with a real network source. Swapping
  * the provider (static -> live 211/HSDS) requires no change here or downstream.
+ *
+ * The provider must be a STABLE reference (a module-level singleton like `staticProvider`, or one
+ * held in state/useMemo). Re-loading is keyed on provider identity, so passing a freshly-built
+ * object literal on every render would re-trigger the load forever.
  */
 export function useResources(provider: ResourceProvider) {
   const [resources, setResources] = useState<Resource[]>([]);

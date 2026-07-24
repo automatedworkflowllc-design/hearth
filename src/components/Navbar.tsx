@@ -18,11 +18,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchClick, accessibility }) 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="bg-surface p-1.5 rounded-lg flex items-center justify-center">
-            <BrandMark className="w-6 h-6 text-primary" />
+            <BrandMark className="w-7 h-7" />
           </div>
           <div>
             <span className="font-bold text-xl tracking-tight block">Hearth</span>
-            <span className="text-xs text-on-nav/80 hidden sm:block">Find local support near you</span>
+            <span className="text-xs text-on-nav-muted hidden sm:block">Find local support near you</span>
           </div>
         </div>
 
