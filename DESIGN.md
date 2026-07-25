@@ -1,8 +1,24 @@
 # Hearth — Design Direction (LOCKED 2026-07-24)
 
-Status: **direction + logo locked, not yet built into the app.** This is the brief for the
-next work session. The current app still wears the plain M4b look; the job is to bring *this*
-identity into it.
+Status: **BUILT — this direction is live in the app** (commits `78d7b5b`, `97a31b5`), verified
+in-browser in both themes at desktop and mobile. Lighthouse (mobile): **Accessibility 100,
+Best Practices 100, SEO 100**. Not yet pushed to the public GitHub Pages site — that is Colin's call.
+
+This file remains the source of truth for *why* the design is the way it is. Everything below
+describes what shipped, except the "Next-session build plan" section, which is now done and kept
+only as a record of the order it was executed in.
+
+### Hard-won gotchas (cost real debugging — do not regress)
+- **Never use Tailwind opacity modifiers on the `var()`-backed tokens** (`text-on-nav/70`,
+  `bg-primary/10`, `border-primary/40`). Tailwind cannot apply alpha to a raw `var()` color, so the
+  declaration is invalid and *silently dropped* — the element falls back to inherited color. This
+  made the footer body text dark-on-dark invisible. Use a real token instead (e.g. `--text-on-nav-muted`).
+- **Never hardcode a `var(--...)` into a class** (`text-[color:var(--bg-nav-hover)]`): tokens that
+  are backgrounds in one theme become invisible text in the other.
+- **Coral must be dark enough for the tinted surfaces, not just white.** `#c9472f` passed on white
+  (4.74:1) but failed on `--bg-card-hover` (4.08:1). The shipped `--color-primary: #b03d28` passes both.
+- **Quick Exit must not own a bare Escape** — Escape also closes the resource modal, so a single-press
+  trigger ejected users off the site. It requires 3 presses within 1.5s (Trevor Project pattern).
 
 ## The idea
 State-of-the-art redesign, treating Hearth as a **real product** (national-scale, search-first),
