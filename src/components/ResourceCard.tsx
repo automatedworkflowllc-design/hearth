@@ -7,15 +7,17 @@ interface ResourceCardProps {
   onSelect: (resource: Resource) => void;
 }
 
-// Category colors are deliberately fixed (they do NOT flip in high-contrast) but every pair
-// below was contrast-checked against the white card at >= 4.5:1, and the category is always
-// also conveyed as text -- so color is never the sole signal.
+// Category colors are token-backed so they flip with the theme. They used to be hardcoded hexes
+// chosen against the WHITE card -- which a sweep caught: on the BLACK high-contrast card the plum
+// was 1.91:1, i.e. the label all but disappeared in the mode built for low vision. The tokens keep
+// the warm hues in the standard theme and go white in high-contrast (21:1); the category is always
+// ALSO conveyed as text, so color is never the sole signal either way.
 const categoryColors: Record<string, string> = {
-  food: 'text-[#8a4a12]',      // warm brown (not green: green is reserved for status)
-  shelter: 'text-[#c9472f]',   // accessible coral
-  health: 'text-[#5e2a4d]',    // plum
-  legal: 'text-[#8a4a12]',
-  support: 'text-[#35684a]',   // dark sage
+  food: 'text-cat-food',        // warm brown (not green: green is reserved for status)
+  shelter: 'text-cat-shelter',  // coral
+  health: 'text-cat-health',    // plum
+  legal: 'text-cat-legal',
+  support: 'text-cat-support',  // dark sage
 };
 
 /** Distance shown at ZIP/city precision is an estimate, so present it as one. */

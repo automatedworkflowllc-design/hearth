@@ -29,7 +29,9 @@ export const QuickExit: React.FC = () => {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
+      // Ignore auto-repeat: holding Escape down emits a burst of keydowns (~30ms apart), which
+      // would trip the 3-press gesture just by resting on the key.
+      if (e.key !== 'Escape' || e.repeat) return;
       const now = Date.now();
       presses.current = [...presses.current, now].filter((t) => now - t <= ESCAPE_WINDOW_MS);
       if (presses.current.length >= ESCAPE_COUNT) {

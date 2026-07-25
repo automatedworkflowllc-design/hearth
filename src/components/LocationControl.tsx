@@ -44,7 +44,7 @@ export const LocationControl: React.FC<LocationControlProps> = ({
         </span>
         <button
           onClick={onClear}
-          className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold text-primary hover:bg-card-hover focus:outline-none focus:ring-2 focus:ring-primary"
+          className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold text-primary hover:bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
         >
           <X className="h-3.5 w-3.5" aria-hidden="true" /> Clear
         </button>
@@ -76,7 +76,7 @@ export const LocationControl: React.FC<LocationControlProps> = ({
             value={zip}
             onChange={(e) => setZip(e.target.value)}
             placeholder="ZIP code"
-            className="w-28 rounded-lg border border-border bg-app px-3 py-2 text-sm text-main placeholder:text-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-28 rounded-lg border border-border-input bg-app px-3 py-2 text-sm text-main placeholder:text-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
           />
           <button
             type="submit"

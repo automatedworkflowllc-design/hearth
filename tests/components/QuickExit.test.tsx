@@ -33,6 +33,16 @@ describe('QuickExit', () => {
     expect(replaceSpy).not.toHaveBeenCalled();
   });
 
+  // Holding Escape emits auto-repeat keydowns; without filtering them, simply resting on the key
+  // would eject the user.
+  it('ignores auto-repeat Escape (holding the key must not trigger it)', () => {
+    render(<QuickExit />);
+    for (let i = 0; i < 10; i++) {
+      fireEvent.keyDown(document, { key: 'Escape', repeat: true });
+    }
+    expect(replaceSpy).not.toHaveBeenCalled();
+  });
+
   it('leaves after three rapid Escape presses', () => {
     render(<QuickExit />);
     fireEvent.keyDown(document, { key: 'Escape' });

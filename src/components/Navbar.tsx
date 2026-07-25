@@ -29,7 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchClick, accessibility }) 
         <div className="flex items-center space-x-4">
           <button
             onClick={onSearchClick}
-            className="flex items-center space-x-1 bg-nav-hover hover:bg-nav-hover text-on-nav px-3 py-1.5 rounded-md text-sm transition focus:outline-none focus:ring-2 focus:ring-white"
+            className="flex items-center space-x-1 bg-nav-hover hover:bg-on-nav hover:text-nav text-on-nav px-3 py-1.5 rounded-md text-sm transition focus:outline-none focus:ring-2 focus:ring-white"
             aria-label="Jump to search"
           >
             <Search className="w-4 h-4" aria-hidden="true" />

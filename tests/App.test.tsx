@@ -43,6 +43,15 @@ describe('App integration', () => {
     expect(screen.queryByText(RESOURCE)).not.toBeInTheDocument();
   });
 
+  it('navbar search button focuses the search field (it used to be inert)', async () => {
+    render(<App />);
+    await screen.findByText(RESOURCE);
+    const input = screen.getByLabelText(/search resources/i);
+    expect(document.activeElement).not.toBe(input);
+    fireEvent.click(screen.getByRole('button', { name: /jump to search/i }));
+    expect(document.activeElement).toBe(input);
+  });
+
   it('opens the detail dialog and closes it with Escape', async () => {
     render(<App />);
     await screen.findByText(RESOURCE);

@@ -43,7 +43,10 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               className={`rounded-full px-4 py-2 font-display text-xs font-bold transition-all ${
                 isActive
                   ? 'bg-primary text-inverse shadow-sm'
-                  : 'bg-card-hover text-main hover:bg-border'
+                  // hover:bg-app, NOT hover:bg-border -- in high-contrast --border-main and
+                  // --text-main are both #ffffff, so a border-token background made the label
+                  // vanish on hover (1:1) exactly in the mode built for low vision.
+                  : 'bg-card-hover text-main hover:bg-app'
               }`}
             >
               {cat.label}

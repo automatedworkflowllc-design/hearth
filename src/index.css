@@ -33,6 +33,15 @@ html[data-contrast="standard"] {
   --color-danger: #dc2626;    /* red-600, 4.83:1 on white */
   --focus-ring-color: #5e2a4d;
   --focus-ring-width: 3px;
+  --border-input: #8a7a6e;    /* 4.13:1 on white -- form fields need a >=3:1 boundary (WCAG 1.4.11);
+                                 the decorative --border-main is only 1.34:1 and cannot serve here */
+  /* Category label colors. Defined per-theme because the standard values were chosen against the
+     WHITE card and go near-invisible on the BLACK high-contrast card (plum was 1.91:1 there). */
+  --cat-food: #8a4a12;
+  --cat-shelter: #b03d28;
+  --cat-health: #5e2a4d;
+  --cat-legal: #8a4a12;
+  --cat-support: #35684a;
   --shadow-card: 0 1px 3px 0 rgb(36 26 34 / 0.08), 0 1px 2px -1px rgb(36 26 34 / 0.08);
   --bg-nav: #3a1830;          /* plum-deep */
   --bg-nav-hover: #5e2a4d;    /* plum */
@@ -69,6 +78,15 @@ html[data-contrast="high-contrast"],
   --color-danger: #ff8a8a;    /* light red, ~9:1 on black; default red-600 is only 4.35:1 there */
   --focus-ring-color: #00ffff;
   --focus-ring-width: 4px;
+  --border-input: #ffffff;
+  /* In high-contrast every category label goes white (21:1 on the black card). The category is
+     always ALSO conveyed as text, so losing the colour differentiation costs no information --
+     whereas keeping the warm hues would cost legibility, which is the whole point of this mode. */
+  --cat-food: #ffffff;
+  --cat-shelter: #ffffff;
+  --cat-health: #ffffff;
+  --cat-legal: #ffffff;
+  --cat-support: #ffffff;
   --shadow-card: none;
   --bg-nav: #000000;
   --bg-nav-hover: #1a1a1a;
@@ -110,6 +128,13 @@ body {
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* On the dark nav/footer the plum ring is only ~1.4:1 against --bg-nav and is effectively
+   invisible, so those surfaces get the on-nav colour instead (~11.7:1). */
+nav :focus-visible,
+footer :focus-visible {
+  outline-color: var(--text-on-nav);
 }
 
 /* The amber "hearth glow" behind the hero headline -- decorative, non-text, aria-hidden in

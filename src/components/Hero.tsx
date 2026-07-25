@@ -6,6 +6,9 @@ interface HeroProps {
   onSearchChange: (q: string) => void;
 }
 
+/** Shared so the navbar's "Search Resources" button can move focus here. */
+export const SEARCH_INPUT_ID = 'hearth-search';
+
 /**
  * The single page hero (replaces the old duplicate Header.tsx banner + in-App hero div).
  * Owns the real, controlled search input -- FilterPanel no longer duplicates it. The amber
@@ -40,9 +43,12 @@ export const Hero: React.FC<HeroProps> = ({ searchQuery, onSearchChange }) => {
           onSubmit={(e) => e.preventDefault()}
           className="mt-6 flex flex-wrap gap-2 rounded-2xl border border-border bg-surface p-2 shadow-sm sm:max-w-lg"
         >
-          <div className="flex min-w-[180px] flex-1 items-center gap-2 rounded-xl bg-app px-3.5 py-2.5">
+          {/* The ring lives on the wrapper (focus-within) because the input itself is chrome-less
+              inside this pill -- without it the primary search field had no visible focus at all. */}
+          <div className="flex min-w-[180px] flex-1 items-center gap-2 rounded-xl bg-app px-3.5 py-2.5 focus-within:outline focus-within:outline-[3px] focus-within:outline-offset-2 focus-within:outline-[color:var(--focus-ring-color)]">
             <Search className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
             <input
+              id={SEARCH_INPUT_ID}
               type="text"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}

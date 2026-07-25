@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Layout from './components/Layout';
-import { Hero } from './components/Hero';
+import { Hero, SEARCH_INPUT_ID } from './components/Hero';
 import { SafetyBar } from './components/SafetyBar';
 import { FilterPanel } from './components/FilterPanel';
 import { ResourceCard } from './components/ResourceCard';
@@ -48,6 +48,17 @@ export const App: React.FC = () => {
   // not on every re-render of App (e.g. typing in search).
   const closeModal = useCallback(() => setSelectedResource(null), []);
 
+  // The navbar's "Search Resources" button was inert -- App never passed a handler, so clicking
+  // it did nothing. It now moves focus to the hero's search field.
+  const focusSearch = useCallback(() => {
+    const el = document.getElementById(SEARCH_INPUT_ID) as HTMLInputElement | null;
+    if (!el) return;
+    // Focus FIRST: it is the behavior that matters, and scrollIntoView is not universally
+    // available -- calling it first meant one throw silently swallowed the focus entirely.
+    el.focus();
+    el.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+  }, []);
+
   const filteredResources = useMemo(() => {
     return searchResources(
       searchQuery,
@@ -61,7 +72,7 @@ export const App: React.FC = () => {
   }, [searchQuery, selectedCategory, sortBy, location, resources]);
 
   return (
-    <Layout accessibility={a11y}>
+    <Layout accessibility={a11y} onSearchClick={focusSearch}>
       <div className="space-y-6">
         {/* Crisis lines first: correctly scoped (911 danger / 988 talk / DV hotline), calm not alarming. */}
         <SafetyBar />

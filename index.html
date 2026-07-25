@@ -8,7 +8,9 @@
     <meta name="description" content="Hearth — find real, verified local community resources (food, shelter, health, legal aid) in the Gainesville, FL area." />
     <title>Hearth — Find local support in Gainesville, FL</title>
   </head>
-  <body class="bg-gray-50 text-gray-900 min-h-screen antialiased">
+  <!-- No color utilities here: a class selector outranks index.css's `body { ... var(--bg-app) }`,
+       so stock palette classes would silently override the themed canvas. -->
+  <body class="min-h-screen antialiased">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

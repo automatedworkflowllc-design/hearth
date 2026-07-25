@@ -13,7 +13,7 @@ const SIZES: { id: TextSize; label: string; a11y: string }[] = [
 // black-on-black. bg-on-nav (white in both themes) + text-nav keeps contrast either way.
 const btn = (active: boolean) =>
   `min-w-[2rem] rounded-md px-2 py-1.5 text-xs font-bold transition focus:outline-none focus:ring-2 focus:ring-white ${
-    active ? 'bg-on-nav text-nav' : 'bg-nav-hover text-on-nav hover:bg-nav-hover'
+    active ? 'bg-on-nav text-nav' : 'bg-nav-hover text-on-nav hover:bg-on-nav hover:text-nav'
   }`;
 
 /**
