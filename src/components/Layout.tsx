@@ -31,11 +31,13 @@ export const Layout: React.FC<LayoutProps> = ({ children, onSearchClick, accessi
         <Navbar onSearchClick={onSearchClick} accessibility={accessibility} />
       </header>
 
+      {/* pb-24 keeps the last controls clear of the fixed Quick Exit button, which would
+          otherwise sit on top of them (it overlapped "Use my location" at mobile widths). */}
       <main
         id="main-content"
         role="main"
         tabIndex={-1}
-        className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 focus:outline-none"
+        className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-24 focus:outline-none"
       >
         {children}
       </main>

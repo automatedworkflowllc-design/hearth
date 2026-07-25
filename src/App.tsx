@@ -97,8 +97,12 @@ export const App: React.FC = () => {
           distanceAvailable={!!location}
         />
 
-        {/* View toggle */}
-        <div className="flex items-center justify-end">
+        {/* Results heading -- also keeps the document outline sequential (h1 hero -> h2 here ->
+            h3 per card); without it the card headings jumped straight from h1 to h3. */}
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <h2 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-main">
+            Help near you
+          </h2>
           <div className="inline-flex rounded-xl border border-border bg-surface p-1" role="group" aria-label="View mode">
             <button
               onClick={() => setView('list')}
