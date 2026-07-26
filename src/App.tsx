@@ -29,6 +29,26 @@ export const App: React.FC = () => {
 
   const { location, status, error, requestGps, setFromZip, setFromPostalCode, clear } = useGeolocation();
   const a11y = useAccessibility();
+
+  // Set the default distance sort in the same user action that starts location
+  // selection. React batches these updates, so the national provider never
+  // receives a throwaway relevance request before the distance request.
+  const prepareDistanceSort = useCallback(() => {
+    setSortBy((current) => (current === 'relevance' ? 'distance' : current));
+  }, []);
+  const handleRequestGps = useCallback(() => {
+    prepareDistanceSort();
+    requestGps();
+  }, [prepareDistanceSort, requestGps]);
+  const handleSetFromZip = useCallback((coords: { lat: number; lng: number }, zip: string) => {
+    prepareDistanceSort();
+    setFromZip(coords, zip);
+  }, [prepareDistanceSort, setFromZip]);
+  const handleSetFromPostalCode = useCallback((zip: string) => {
+    prepareDistanceSort();
+    setFromPostalCode(zip);
+  }, [prepareDistanceSort, setFromPostalCode]);
+
   const resourceRequest = useMemo(() => ({
     query: searchQuery,
     category: selectedCategory,
@@ -57,12 +77,13 @@ export const App: React.FC = () => {
   } = useResources(RESOURCE_PROVIDER, resourceRequest, shouldSearchResources);
   const needsNationalLocation = coverage === 'national' && !location;
 
-  // When the user sets a location, default the sort to distance (unless they've chosen
-  // name); when they clear it, fall back off distance. Never overrides an explicit choice.
+  // If GPS selection fails, restore a valid non-distance sort while the
+  // distance option is unavailable.
   useEffect(() => {
-    if (location) setSortBy((s) => (s === 'relevance' ? 'distance' : s));
-    else setSortBy((s) => (s === 'distance' ? 'relevance' : s));
-  }, [location]);
+    if (!location && status !== 'idle' && status !== 'locating') {
+      setSortBy((current) => (current === 'distance' ? 'relevance' : current));
+    }
+  }, [location, status]);
 
   // Reset the sort synchronously on clear so the sort <select> is never left showing
   // "distance" after its option is removed (avoids a one-commit value/option mismatch).
@@ -140,9 +161,9 @@ export const App: React.FC = () => {
           location={location}
           status={status}
           error={error}
-          onRequestGps={requestGps}
-          onSetZip={setFromZip}
-          onSetPostalCode={setFromPostalCode}
+          onRequestGps={handleRequestGps}
+          onSetZip={handleSetFromZip}
+          onSetPostalCode={handleSetFromPostalCode}
           nationalCoverage={coverage === 'national'}
           onClear={handleClearLocation}
         />
