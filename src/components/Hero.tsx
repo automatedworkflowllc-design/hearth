@@ -1,8 +1,11 @@
 import React from 'react';
 import {
+  Activity,
   ArrowRight,
   BedDouble,
+  Brain,
   HeartPulse,
+  Pill,
   Scale,
   Search,
   ShieldCheck,
@@ -14,7 +17,7 @@ interface HeroProps {
   onSearchChange: (q: string) => void;
   onSearchSubmit: () => void;
   onCategorySelect: (category: string) => void;
-  nationalHealthPilot?: boolean;
+  nationalDirectory?: boolean;
 }
 
 /** Shared so the navbar's "Search Resources" button can move focus here. */
@@ -27,6 +30,13 @@ const quickNeeds = [
   { category: 'legal', label: 'Legal help', icon: Scale },
 ];
 
+const nationalQuickNeeds = [
+  { category: 'medical-care', label: 'Medical care', icon: HeartPulse },
+  { category: 'mental-health', label: 'Mental health', icon: Brain },
+  { category: 'substance-use', label: 'Substance-use help', icon: Pill },
+  { category: 'detox', label: 'Detox support', icon: Activity },
+];
+
 /**
  * Search-first hero with quick paths for people who do not know what to type.
  * The amber glow is decorative and suppressed in high-contrast mode.
@@ -36,11 +46,9 @@ export const Hero: React.FC<HeroProps> = ({
   onSearchChange,
   onSearchSubmit,
   onCategorySelect,
-  nationalHealthPilot = false,
+  nationalDirectory = false,
 }) => {
-  const displayedQuickNeeds = nationalHealthPilot
-    ? quickNeeds.filter(({ category }) => category === 'health')
-    : quickNeeds;
+  const displayedQuickNeeds = nationalDirectory ? nationalQuickNeeds : quickNeeds;
 
   return (
     <section className="relative overflow-hidden rounded-2xl border border-border bg-app px-5 py-8 sm:px-8 sm:py-12 lg:px-10">
@@ -62,8 +70,8 @@ export const Hero: React.FC<HeroProps> = ({
           </h1>
 
           <p className="mt-4 max-w-xl text-base text-muted sm:text-lg">
-            {nationalHealthPilot
-              ? 'Find nearby health centers from the national HRSA directory. Broader support categories are being added.'
+            {nationalDirectory
+              ? 'Find nearby medical care, mental-health support, substance-use treatment, and detox services from national directories.'
               : 'Find food, a safe place to stay, health care, and legal help from real, recently-reviewed organizations near you.'}{' '}
             <span className="font-serif italic text-brand">You belong here.</span>
           </p>
@@ -83,7 +91,11 @@ export const Hero: React.FC<HeroProps> = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
-                placeholder={nationalHealthPilot ? 'Search health centers…' : 'What do you need? (food, a bed tonight…)'}
+                placeholder={
+                  nationalDirectory
+                    ? 'Try therapy, dental care, detox…'
+                    : 'What do you need? (food, a bed tonight…)'
+                }
                 aria-label="Search resources"
                 className="min-h-11 min-w-0 w-full bg-transparent text-sm font-medium text-main placeholder:text-muted focus:outline-none"
               />
@@ -102,11 +114,11 @@ export const Hero: React.FC<HeroProps> = ({
           aria-labelledby="quick-needs-title"
         >
           <p id="quick-needs-title" className="font-display text-sm font-extrabold text-main">
-            {nationalHealthPilot ? 'Start with nationwide health care' : 'What do you need right now?'}
+            What do you need right now?
           </p>
           <p className="mt-1 text-xs text-muted">
-            {nationalHealthPilot
-              ? 'Enter your location below to see nearby HRSA-listed centers.'
+            {nationalDirectory
+              ? 'Choose a need, then enter your location to see relevant services.'
               : 'Choose a starting point. You can change it anytime.'}
           </p>
           <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
@@ -125,12 +137,12 @@ export const Hero: React.FC<HeroProps> = ({
               </button>
             ))}
           </div>
-          {nationalHealthPilot && (
+          {nationalDirectory && (
             <a
               href="tel:211"
               className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-border bg-app px-3.5 py-2.5 font-display text-sm font-bold text-primary hover:bg-card-hover"
             >
-              Call 211 for other needs
+              Need food, a warm bed, or legal help? Call 211
             </a>
           )}
         </aside>

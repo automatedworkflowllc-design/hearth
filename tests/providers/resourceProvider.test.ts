@@ -21,6 +21,7 @@ describe('national resource provider', () => {
     await provider.search({
       query: 'food',
       category: 'food',
+      need: 'mental-health',
       userLocation: { zipCode: '90210' },
       sortBy: 'distance',
       limit: 500,
@@ -31,6 +32,7 @@ describe('national resource provider', () => {
     const [url, options] = fetchMock.mock.calls[0] as [URL, RequestInit];
     expect(url.origin + url.pathname).toBe('https://directory.example.org/v1/resources/search');
     expect(url.searchParams.get('q')).toBe('food');
+    expect(url.searchParams.get('need')).toBe('mental-health');
     expect(url.searchParams.get('zip')).toBe('90210');
     expect(url.searchParams.get('limit')).toBe('100');
     expect(url.searchParams.getAll('tag')).toEqual(['pantry']);

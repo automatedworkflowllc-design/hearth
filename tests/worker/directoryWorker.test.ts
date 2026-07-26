@@ -61,7 +61,7 @@ describe('national directory worker', () => {
   it('bounds public search inputs and produces a safe parameterized query', () => {
     const options = parseSearchOptions(
       new URL(
-        'https://directory.example/v1/resources/search?q=health&category=health&zip=32601&limit=999'
+        'https://directory.example/v1/resources/search?q=health&category=health&need=mental-health&zip=32601&limit=999'
       )
     );
     const query = buildResourceQuery(options, {
@@ -71,9 +71,12 @@ describe('national directory worker', () => {
 
     expect(options.limit).toBe(100);
     expect(options.zip).toBe('32601');
+    expect(options.need).toBe('mental-health');
     expect(query.sql).toContain('search_text LIKE ?');
+    expect(query.sql).toContain('tags_json LIKE ?');
     expect(query.sql).not.toContain('health');
     expect(query.pageBindings).toContain('%health%');
+    expect(query.pageBindings).toContain('%"mental health"%');
     expect(query.pageBindings.at(-2)).toBe(100);
   });
 
@@ -84,6 +87,37 @@ describe('national directory worker', () => {
     expect(() =>
       parseSearchOptions(new URL('https://directory.example/v1/resources/search?cursor=not-base64'))
     ).toThrow(/cursor/i);
+    expect(() =>
+      parseSearchOptions(new URL('https://directory.example/v1/resources/search?need=warm-bed'))
+    ).toThrow(/need filter/i);
+  });
+
+  it('maps supported need filters to precise source and tag constraints', () => {
+    const medical = buildResourceQuery({
+      need: 'medical-care',
+      sort: 'relevance',
+      limit: 20,
+      offset: 0,
+    });
+    expect(medical.sql).toContain('source_name = ?');
+    expect(medical.bindings).toContain('HRSA');
+
+    const substanceUse = buildResourceQuery({
+      need: 'substance-use',
+      sort: 'relevance',
+      limit: 20,
+      offset: 0,
+    });
+    expect(substanceUse.sql).toContain('tags_json LIKE ?');
+    expect(substanceUse.bindings).toContain('%"substance use treatment"%');
+
+    const detox = buildResourceQuery({
+      need: 'detox',
+      sort: 'relevance',
+      limit: 20,
+      offset: 0,
+    });
+    expect(detox.bindings).toContain('%"detoxification"%');
   });
 
   it('maps an imported HRSA row into the browser resource contract', () => {

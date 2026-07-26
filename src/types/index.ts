@@ -91,6 +91,7 @@ export interface DirectoryFacets {
 export interface ResourceSearchRequest {
   query?: string;
   category?: string;
+  need?: 'all' | 'medical-care' | 'mental-health' | 'substance-use' | 'detox';
   city?: string;
   tags?: string[];
   userLocation?: Location;

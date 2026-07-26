@@ -46,6 +46,8 @@ interface ResourceProvider {
 - With `VITE_HEARTH_API_BASE_URL`, the app queries
   `GET /v1/resources/search` on the protected Hearth directory service.
 - National ZIPs are sent to that service for nearby matching; GPS remains strictly opt-in.
+- National need filters use reviewed source and service tags for medical care, mental health,
+  substance-use treatment, and detox instead of treating every listing as generic health care.
 - Language and accessibility filters appear only when the provider supplies reviewed metadata.
 
 The free backend implementation now includes a Cloudflare Worker/D1 search service, an
@@ -95,8 +97,10 @@ JavaScript.
 
 ## Honest limitations
 
-- The deployed demo currently covers Gainesville, Florida, not the nation.
-- The deployed national pilot covers HRSA-listed health centers and SAMHSA-listed mental-health
+- The deployed service provides national proximity search for HRSA-listed health centers and
+  SAMHSA-listed behavioral-health facilities. The bundled Gainesville dataset remains the
+  development fallback when the national API is not configured.
+- Current national coverage includes HRSA-listed health centers and SAMHSA-listed mental-health
   and substance-use treatment facilities. Broader categories still require approved 211 access,
   more source adapters, and ongoing human review.
 - Production is checked every six hours. Guarded HRSA and SAMHSA refreshes refuse suspicious

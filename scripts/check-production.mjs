@@ -76,10 +76,11 @@ async function checkHealth() {
 async function checkBehavioralHealthSearch() {
   const searchUrl = new URL('/v1/resources/search', API_URL);
   searchUrl.search = new URLSearchParams({
-    q: 'mental health',
+    need: 'mental-health',
     sort: 'distance',
     zip: '10001',
     limit: '5',
+    probe: String(Date.now()),
   }).toString();
 
   const response = await fetchWithTimeout(searchUrl, {
@@ -93,10 +94,12 @@ async function checkBehavioralHealthSearch() {
   );
   ensure(result.total > 0, 'Known-good behavioral-health search returned no resources.');
   ensure(
-    result.resources?.some((resource) =>
-      resource.review?.sources?.some((source) => source.name === 'SAMHSA'),
+    result.resources?.every(
+      (resource) =>
+        resource.tags?.includes('mental health') &&
+        resource.review?.sources?.some((source) => source.name === 'SAMHSA'),
     ),
-    'Behavioral-health search did not return a SAMHSA-backed resource.',
+    'Mental-health filter returned a resource outside the requested need.',
   );
 
   return {
@@ -106,6 +109,53 @@ async function checkBehavioralHealthSearch() {
     firstResource: result.resources[0]?.name,
     firstDistanceMiles: result.resources[0]?.distanceMiles,
   };
+}
+
+async function checkNeedFilters() {
+  const cases = [
+    {
+      need: 'medical-care',
+      matches: (resource) =>
+        resource.review?.sources?.some((source) => source.name === 'HRSA'),
+    },
+    {
+      need: 'substance-use',
+      matches: (resource) => resource.tags?.includes('substance use treatment'),
+    },
+    {
+      need: 'detox',
+      matches: (resource) => resource.tags?.includes('detoxification'),
+    },
+  ];
+
+  return Promise.all(
+    cases.map(async ({ need, matches }) => {
+      const searchUrl = new URL('/v1/resources/search', API_URL);
+      searchUrl.search = new URLSearchParams({
+        need,
+        sort: 'distance',
+        zip: '10001',
+        limit: '5',
+        probe: String(Date.now()),
+      }).toString();
+      const response = await fetchWithTimeout(searchUrl, {
+        headers: { Origin: SITE_ORIGIN },
+      });
+      const result = await readJson(response, `${need} search endpoint`);
+      ensure(response.status === 200, `${need} search returned HTTP ${response.status}.`);
+      ensure(result.total > 0, `${need} search returned no resources.`);
+      ensure(
+        result.resources?.every(matches),
+        `${need} search returned a resource outside the requested need.`,
+      );
+      return {
+        need,
+        total: result.total,
+        returned: result.resources.length,
+        firstResource: result.resources[0]?.name,
+      };
+    }),
+  );
 }
 
 async function checkSearch() {
@@ -160,11 +210,12 @@ async function checkInvalidInput() {
 }
 
 const startedAt = Date.now();
-const [site, health, search, behavioralHealthSearch, invalidInput] = await Promise.all([
+const [site, health, search, behavioralHealthSearch, needFilters, invalidInput] = await Promise.all([
   checkSite(),
   checkHealth(),
   checkSearch(),
   checkBehavioralHealthSearch(),
+  checkNeedFilters(),
   checkInvalidInput(),
 ]);
 
@@ -182,6 +233,7 @@ console.log(
       },
       search,
       behavioralHealthSearch,
+      needFilters,
       invalidInput,
     },
     null,

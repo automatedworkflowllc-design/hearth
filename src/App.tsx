@@ -17,10 +17,14 @@ import { AlertCircle, List as ListIcon, Map as MapIcon } from 'lucide-react';
 type ViewMode = 'list' | 'map';
 const RESULTS_HEADING_ID = 'resource-results';
 const RESOURCE_PROVIDER = getConfiguredProvider();
+const IS_NATIONAL_DIRECTORY = RESOURCE_PROVIDER.coverage === 'national';
 
 export const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedNeed, setSelectedNeed] = useState<
+    'all' | 'medical-care' | 'mental-health' | 'substance-use' | 'detox'
+  >('all');
   const [sortBy, setSortBy] = useState<'relevance' | 'name' | 'distance'>('relevance');
   const [selectedLanguage, setSelectedLanguage] = useState('all');
   const [wheelchairOnly, setWheelchairOnly] = useState(false);
@@ -51,7 +55,8 @@ export const App: React.FC = () => {
 
   const resourceRequest = useMemo(() => ({
     query: searchQuery,
-    category: selectedCategory,
+    category: IS_NATIONAL_DIRECTORY ? 'all' : selectedCategory,
+    need: IS_NATIONAL_DIRECTORY ? selectedNeed : undefined,
     userLocation: location ?? undefined,
     sortBy,
     language: selectedLanguage,
@@ -60,6 +65,7 @@ export const App: React.FC = () => {
   }), [
     searchQuery,
     selectedCategory,
+    selectedNeed,
     location,
     sortBy,
     selectedLanguage,
@@ -115,7 +121,13 @@ export const App: React.FC = () => {
 
   const showCategory = useCallback((category: string) => {
     setSearchQuery('');
-    setSelectedCategory(category);
+    if (IS_NATIONAL_DIRECTORY) {
+      setSelectedNeed(
+        category as 'all' | 'medical-care' | 'mental-health' | 'substance-use' | 'detox'
+      );
+    } else {
+      setSelectedCategory(category);
+    }
     setView('list');
     requestAnimationFrame(() => {
       focusResults();
@@ -136,7 +148,7 @@ export const App: React.FC = () => {
           onSearchChange={setSearchQuery}
           onSearchSubmit={focusResults}
           onCategorySelect={showCategory}
-          nationalHealthPilot={RESOURCE_PROVIDER.coverage === 'national'}
+          nationalDirectory={IS_NATIONAL_DIRECTORY}
         />
 
         {coverage === 'local-demo' ? (
@@ -149,10 +161,10 @@ export const App: React.FC = () => {
           </div>
         ) : (
           <div role="status" className="bg-card-hover border-l-4 border-accent text-main rounded-xl px-4 py-3 text-sm">
-            Searching the <strong>{providerLabel}</strong>. This first nationwide layer contains
-            HRSA-listed health centers; food, shelter, legal, and broader support coverage is still
-            being added. Dial <a className="font-semibold underline" href="tel:211">211</a> for a
-            live referral in any category.
+            Searching <strong>{providerLabel}</strong> across medical and behavioral-health
+            services. Use the need filters for cleaner results. For food, shelter, legal help, or
+            another category not yet covered nationally, dial{' '}
+            <a className="font-semibold underline" href="tel:211">211</a>.
           </div>
         )}
 
@@ -170,8 +182,15 @@ export const App: React.FC = () => {
 
         {/* Category + sort controls (search itself lives in the Hero). */}
         <FilterPanel
-          selectedCategory={selectedCategory}
-          onCategoryChange={setSelectedCategory}
+          selectedCategory={IS_NATIONAL_DIRECTORY ? selectedNeed : selectedCategory}
+          onCategoryChange={
+            IS_NATIONAL_DIRECTORY
+              ? (need) =>
+                  setSelectedNeed(
+                    need as 'all' | 'medical-care' | 'mental-health' | 'substance-use' | 'detox'
+                  )
+              : setSelectedCategory
+          }
           sortBy={sortBy}
           onSortChange={setSortBy}
           totalResultsCount={needsNationalLocation ? 0 : total}
@@ -182,8 +201,16 @@ export const App: React.FC = () => {
           wheelchairFilterAvailable={facets.hasWheelchairData}
           wheelchairOnly={wheelchairOnly}
           onWheelchairOnlyChange={setWheelchairOnly}
-          resultsContext={coverage === 'national' ? 'from the national health-center pilot' : 'in the Gainesville, FL area'}
-          availableCategoryIds={coverage === 'national' ? ['all', 'health'] : undefined}
+          resultsContext={
+            coverage === 'national'
+              ? 'from national medical and behavioral-health directories'
+              : 'in the Gainesville, FL area'
+          }
+          availableCategoryIds={
+            coverage === 'national'
+              ? ['all', 'medical-care', 'mental-health', 'substance-use', 'detox']
+              : ['all', 'food', 'shelter', 'health', 'legal', 'support']
+          }
         />
 
         {/* Results heading -- also keeps the document outline sequential (h1 hero -> h2 here ->
@@ -237,7 +264,7 @@ export const App: React.FC = () => {
             <MapIcon className="w-12 h-12 text-muted mx-auto mb-3" aria-hidden="true" />
             <h2 className="font-display text-lg font-bold text-main mb-1">Choose a location</h2>
             <p className="text-muted text-sm max-w-md mx-auto">
-              Enter a ZIP code or opt into your device location to find nearby health centers.
+              Enter a ZIP code or opt into your device location to find nearby services.
               Your search location is not stored by Hearth.
             </p>
           </div>
@@ -252,6 +279,7 @@ export const App: React.FC = () => {
               onClick={() => {
                 setSearchQuery('');
                 setSelectedCategory('all');
+                setSelectedNeed('all');
               }}
               className="min-h-11 px-4 py-2.5 bg-primary text-inverse font-display font-bold text-xs rounded-xl hover:bg-primary-hover transition-colors"
             >

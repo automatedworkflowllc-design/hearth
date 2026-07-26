@@ -66,13 +66,14 @@ export function createNationalApiProvider(apiBaseUrl: string): ResourceProvider 
   const base = apiBaseUrl.replace(/\/+$/, '');
   return {
     id: 'hearth-national-api',
-    label: 'Hearth national health-center pilot',
+    label: 'Hearth national resource directory',
     coverage: 'national',
     async search(request) {
       const url = new URL(`${base}/v1/resources/search`);
       const params: Record<string, string | undefined> = {
         q: request.query,
         category: request.category,
+        need: request.need,
         city: request.city,
         sort: request.sortBy,
         language: request.language,

@@ -82,6 +82,7 @@ interface StoredContact {
 export interface SearchOptions {
   query?: string;
   category?: string;
+  need?: 'medical-care' | 'mental-health' | 'substance-use' | 'detox';
   city?: string;
   zip?: string;
   latitude?: number;
@@ -179,10 +180,19 @@ export function parseSearchOptions(url: URL): SearchOptions {
     requestedSort === 'distance' || requestedSort === 'name' || requestedSort === 'relevance'
       ? requestedSort
       : 'relevance';
+  const requestedNeed = clean(url.searchParams.get('need'), 40)?.toLowerCase();
+  const supportedNeeds = new Set(['medical-care', 'mental-health', 'substance-use', 'detox']);
+  if (requestedNeed && requestedNeed !== 'all' && !supportedNeeds.has(requestedNeed)) {
+    throw new Error('Invalid need filter.');
+  }
 
   return {
     query: clean(url.searchParams.get('q'), 160),
     category: clean(url.searchParams.get('category'), 40),
+    need:
+      requestedNeed && requestedNeed !== 'all'
+        ? (requestedNeed as SearchOptions['need'])
+        : undefined,
     city: clean(url.searchParams.get('city'), 80),
     zip: zipValue?.slice(0, 5),
     latitude,
@@ -203,6 +213,19 @@ export function buildResourceQuery(
   if (options.category && options.category.toLowerCase() !== 'all') {
     conditions.push('category = ?');
     bindings.push(options.category.toLowerCase());
+  }
+  if (options.need === 'medical-care') {
+    conditions.push('source_name = ?');
+    bindings.push('HRSA');
+  } else if (options.need === 'mental-health') {
+    conditions.push('tags_json LIKE ?');
+    bindings.push('%"mental health"%');
+  } else if (options.need === 'substance-use') {
+    conditions.push('tags_json LIKE ?');
+    bindings.push('%"substance use treatment"%');
+  } else if (options.need === 'detox') {
+    conditions.push('tags_json LIKE ?');
+    bindings.push('%"detoxification"%');
   }
   if (options.city) {
     conditions.push('LOWER(city) = ?');

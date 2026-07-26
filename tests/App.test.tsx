@@ -25,6 +25,7 @@ describe('App integration', () => {
     render(<App />);
     expect(await screen.findByText(RESOURCE)).toBeInTheDocument();
     expect(screen.getByText(/Showing 11 resources in the Gainesville, FL area/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /substance-use help/i })).not.toBeInTheDocument();
   });
 
   it('filters resources by search query', async () => {

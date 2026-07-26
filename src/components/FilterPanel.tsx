@@ -21,7 +21,11 @@ interface FilterPanelProps {
 // Plain text labels: the emoji that used to prefix these rendered inconsistently across the
 // old/low-end phones this audience actually uses (and read as filler rather than iconography).
 const categories = [
-  { id: 'all', label: 'All' },
+  { id: 'all', label: 'All services' },
+  { id: 'medical-care', label: 'Medical care' },
+  { id: 'mental-health', label: 'Mental health' },
+  { id: 'substance-use', label: 'Substance-use help' },
+  { id: 'detox', label: 'Detox' },
   { id: 'food', label: 'Food & meals' },
   { id: 'shelter', label: 'Shelter & housing' },
   { id: 'health', label: 'Medical & health' },
