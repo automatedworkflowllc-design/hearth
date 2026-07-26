@@ -1,0 +1,84 @@
+name: Refresh SAMHSA directory
+
+on:
+  schedule:
+    # SAMHSA directories are annual; a monthly check picks up revised publications promptly.
+    - cron: '31 11 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: refresh-samhsa-directory
+  cancel-in-progress: false
+
+jobs:
+  refresh-samhsa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      SAMHSA_SU_URL: https://www.samhsa.gov/data/sites/default/files/reports/rpt57009/2025_SU_Facilities_for_All_City_All.xlsx
+      SAMHSA_MH_URL: https://www.samhsa.gov/data/sites/default/files/reports/rpt57010/2025_MH_Facilities_for_All_City_All.xlsx
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Require scoped Cloudflare credentials
+        shell: bash
+        run: |
+          if [[ -z "$CLOUDFLARE_API_TOKEN" || -z "$CLOUDFLARE_ACCOUNT_ID" ]]; then
+            echo "::error::Add CLOUDFLARE_API_TOKEN as a repository secret and CLOUDFLARE_ACCOUNT_ID as a repository variable."
+            exit 1
+          fi
+
+      - run: npm ci
+
+      - name: Download official SAMHSA national directories
+        shell: bash
+        run: |
+          curl \
+            --fail \
+            --location \
+            --retry 5 \
+            --retry-all-errors \
+            --output "$RUNNER_TEMP/samhsa-substance-use.xlsx" \
+            "$SAMHSA_SU_URL"
+          curl \
+            --fail \
+            --location \
+            --retry 5 \
+            --retry-all-errors \
+            --output "$RUNNER_TEMP/samhsa-mental-health.xlsx" \
+            "$SAMHSA_MH_URL"
+
+      - name: Generate and validate the deduplicated D1 import
+        shell: bash
+        run: |
+          npm run --silent directory:ingest:samhsa -- \
+            --substance-use="$RUNNER_TEMP/samhsa-substance-use.xlsx" \
+            --mental-health="$RUNNER_TEMP/samhsa-mental-health.xlsx" \
+            --output="$RUNNER_TEMP/samhsa.sql" \
+            > "$RUNNER_TEMP/samhsa-summary.json"
+          node -e "const fs=require('node:fs');const s=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/samhsa-summary.json','utf8'));if(s.imported<15000||s.imported>25000)throw new Error('SAMHSA safety gate failed: '+s.imported+' normalized facilities.');if(s.unknownServiceCodes.length)throw new Error('SAMHSA introduced unknown service codes: '+s.unknownServiceCodes.join(','));console.log(JSON.stringify(s,null,2));"
+
+      - name: Apply database migrations
+        run: >
+          npx wrangler d1 migrations apply hearth-directory
+          --remote
+          --config worker/wrangler.jsonc
+
+      - name: Apply the validated refresh to production D1
+        run: >
+          npx wrangler d1 execute hearth-directory
+          --remote
+          --config worker/wrangler.jsonc
+          --file "$RUNNER_TEMP/samhsa.sql"
+
+      - name: Verify all source counts and behavioral-health search
+        run: npm run check:production

@@ -41,6 +41,7 @@ interface ResourceRow {
   longitude: number | null;
   phone: string | null;
   website: string | null;
+  contacts_json: string;
   hours_text: string;
   eligibility: string | null;
   services_json: string;
@@ -61,6 +62,21 @@ interface ImportRunRow {
   completed_at: string;
   imported_count: number;
   skipped_count: number;
+}
+
+interface SourceCountRow {
+  source_name: string;
+  total: number;
+}
+
+type StoredContactType = 'phone' | 'sms' | 'email' | 'website' | 'chat' | 'intake';
+
+interface StoredContact {
+  type: StoredContactType;
+  label: string;
+  value: string;
+  primary?: boolean;
+  note?: string;
 }
 
 export interface SearchOptions {
@@ -221,7 +237,7 @@ export function buildResourceQuery(
     SELECT
       id, source_name, source_url, source_updated_at, fetched_at, name, category,
       description, address, city, state, zip_code, latitude, longitude, phone,
-      website, hours_text, eligibility, services_json, tags_json, review_status,
+      website, contacts_json, hours_text, eligibility, services_json, tags_json, review_status,
       review_note, reviewed_at, review_due_at
     FROM resources
     WHERE ${where}`;
@@ -256,9 +272,60 @@ function parseStringArray(value: string): string[] {
   }
 }
 
-function contactHref(type: 'phone' | 'website', value: string): string {
-  if (type === 'phone') return `tel:${value.replace(/[^\d+]/g, '')}`;
+function contactHref(type: StoredContactType, value: string): string {
+  if (type === 'phone' || type === 'intake') {
+    const extension = /(?:ext\.?|x)\s*(\d+)/i.exec(value)?.[1];
+    const base = value.split(/(?:ext\.?|x)\s*\d+/i, 1)[0].replace(/[^\d+]/g, '');
+    return `tel:${base}${extension ? `;ext=${extension}` : ''}`;
+  }
+  if (type === 'sms') return `sms:${value.replace(/[^\d+]/g, '')}`;
+  if (type === 'email') return `mailto:${value}`;
   return /^https?:\/\//i.test(value) ? value : `https://${value}`;
+}
+
+function parseStoredContacts(value: string): StoredContact[] {
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) return [];
+    const allowedTypes = new Set<StoredContactType>([
+      'phone',
+      'sms',
+      'email',
+      'website',
+      'chat',
+      'intake',
+    ]);
+    return parsed.flatMap((candidate): StoredContact[] => {
+      if (!candidate || typeof candidate !== 'object') return [];
+      const type = candidate.type;
+      const label = candidate.label;
+      const contactValue = candidate.value;
+      if (
+        typeof type !== 'string' ||
+        !allowedTypes.has(type as StoredContactType) ||
+        typeof label !== 'string' ||
+        typeof contactValue !== 'string' ||
+        !label.trim() ||
+        !contactValue.trim()
+      ) {
+        return [];
+      }
+      return [
+        {
+          type: type as StoredContactType,
+          label: label.trim(),
+          value: contactValue.trim(),
+          primary: candidate.primary === true || undefined,
+          note:
+            typeof candidate.note === 'string' && candidate.note.trim()
+              ? candidate.note.trim()
+              : undefined,
+        },
+      ];
+    });
+  } catch {
+    return [];
+  }
 }
 
 function calculateDistanceMiles(
@@ -278,24 +345,29 @@ function calculateDistanceMiles(
 }
 
 export function rowToResource(row: ResourceRow, location?: ResolvedLocation) {
-  const contacts = [];
-  if (row.phone) {
-    contacts.push({
-      type: 'phone',
-      label: 'Call',
-      value: row.phone,
-      href: contactHref('phone', row.phone),
-      primary: true,
-      note: 'Call to confirm services, eligibility, and current hours.',
-    });
-  }
-  if (row.website) {
-    contacts.push({
-      type: 'website',
-      label: 'Official website',
-      value: row.website,
-      href: contactHref('website', row.website),
-    });
+  const contacts = parseStoredContacts(row.contacts_json).map((contact) => ({
+    ...contact,
+    href: contactHref(contact.type, contact.value),
+  }));
+  if (!contacts.length) {
+    if (row.phone) {
+      contacts.push({
+        type: 'phone',
+        label: 'Call',
+        value: row.phone,
+        href: contactHref('phone', row.phone),
+        primary: true,
+        note: 'Call to confirm services, eligibility, and current hours.',
+      });
+    }
+    if (row.website) {
+      contacts.push({
+        type: 'website',
+        label: 'Official website',
+        value: row.website,
+        href: contactHref('website', row.website),
+      });
+    }
   }
 
   const hasCoordinates = row.latitude !== null && row.longitude !== null;
@@ -399,7 +471,7 @@ async function search(request: Request, env: Env): Promise<Response> {
       generatedAt: new Date().toISOString(),
       coverage: {
         radiusMiles: location ? SEARCH_RADIUS_MILES : null,
-        sources: ['HRSA'],
+        sources: [...new Set(page.results.map((row) => row.source_name))],
       },
     },
     200,
@@ -408,11 +480,16 @@ async function search(request: Request, env: Env): Promise<Response> {
 }
 
 async function health(request: Request, env: Env): Promise<Response> {
-  const [resourceCount, zipCount, latestImport] = await Promise.all([
+  const [resourceCount, zipCount, sourceCounts, latestImport] = await Promise.all([
     env.DB
       .prepare('SELECT COUNT(*) AS total FROM resources WHERE active = 1')
       .first<{ total: number }>(),
     env.DB.prepare('SELECT COUNT(*) AS total FROM zip_centroids').first<{ total: number }>(),
+    env.DB
+      .prepare(
+        'SELECT source_name, COUNT(*) AS total FROM resources WHERE active = 1 GROUP BY source_name'
+      )
+      .all<SourceCountRow>(),
     env.DB
       .prepare(
         `SELECT source_name, completed_at, imported_count, skipped_count
@@ -432,6 +509,9 @@ async function health(request: Request, env: Env): Promise<Response> {
   const dataFresh = importAgeHours !== null && importAgeHours <= MAX_IMPORT_AGE_HOURS;
   const activeResources = resourceCount?.total ?? 0;
   const zipCentroids = zipCount?.total ?? 0;
+  const sources = Object.fromEntries(
+    sourceCounts.results.map((row) => [row.source_name, row.total])
+  );
   const ok = activeResources > 0 && zipCentroids > 0 && Boolean(latestImport) && dataFresh;
 
   return json(
@@ -442,6 +522,7 @@ async function health(request: Request, env: Env): Promise<Response> {
       data: {
         activeResources,
         zipCentroids,
+        sources,
         fresh: dataFresh,
         maximumImportAgeHours: MAX_IMPORT_AGE_HOURS,
         latestImport: latestImport

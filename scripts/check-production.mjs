@@ -49,7 +49,7 @@ async function checkHealth() {
   ensure(response.status === 200, `Health endpoint returned HTTP ${response.status}.`);
   ensure(health.ok === true, 'Directory health endpoint reported a degraded state.');
   ensure(
-    health.data?.activeResources >= 10_000,
+    health.data?.activeResources >= 30_000,
     `Active resource count is unexpectedly low: ${health.data?.activeResources ?? 'missing'}.`,
   );
   ensure(
@@ -58,11 +58,54 @@ async function checkHealth() {
   );
   ensure(health.data?.fresh === true, 'Directory import is stale.');
   ensure(
+    health.data?.sources?.HRSA >= 15_000,
+    `HRSA resource count is unexpectedly low: ${health.data?.sources?.HRSA ?? 'missing'}.`,
+  );
+  ensure(
+    health.data?.sources?.SAMHSA >= 15_000,
+    `SAMHSA resource count is unexpectedly low: ${health.data?.sources?.SAMHSA ?? 'missing'}.`,
+  );
+  ensure(
     response.headers.get('access-control-allow-origin') === SITE_ORIGIN,
     'Health endpoint returned an unexpected CORS origin.',
   );
 
   return health;
+}
+
+async function checkBehavioralHealthSearch() {
+  const searchUrl = new URL('/v1/resources/search', API_URL);
+  searchUrl.search = new URLSearchParams({
+    q: 'mental health',
+    sort: 'distance',
+    zip: '10001',
+    limit: '5',
+  }).toString();
+
+  const response = await fetchWithTimeout(searchUrl, {
+    headers: { Origin: SITE_ORIGIN },
+  });
+  const result = await readJson(response, 'Behavioral-health search endpoint');
+
+  ensure(
+    response.status === 200,
+    `Behavioral-health search returned HTTP ${response.status}.`,
+  );
+  ensure(result.total > 0, 'Known-good behavioral-health search returned no resources.');
+  ensure(
+    result.resources?.some((resource) =>
+      resource.review?.sources?.some((source) => source.name === 'SAMHSA'),
+    ),
+    'Behavioral-health search did not return a SAMHSA-backed resource.',
+  );
+
+  return {
+    status: response.status,
+    total: result.total,
+    returned: result.resources.length,
+    firstResource: result.resources[0]?.name,
+    firstDistanceMiles: result.resources[0]?.distanceMiles,
+  };
 }
 
 async function checkSearch() {
@@ -117,10 +160,11 @@ async function checkInvalidInput() {
 }
 
 const startedAt = Date.now();
-const [site, health, search, invalidInput] = await Promise.all([
+const [site, health, search, behavioralHealthSearch, invalidInput] = await Promise.all([
   checkSite(),
   checkHealth(),
   checkSearch(),
+  checkBehavioralHealthSearch(),
   checkInvalidInput(),
 ]);
 
@@ -137,6 +181,7 @@ console.log(
         latestImport: health.data.latestImport,
       },
       search,
+      behavioralHealthSearch,
       invalidInput,
     },
     null,

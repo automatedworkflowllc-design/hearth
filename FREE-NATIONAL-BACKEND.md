@@ -6,6 +6,7 @@ Hearth can begin serving real nationwide records without a paid platform. The in
 - a Cloudflare Worker exposing `GET /v1/resources/search`;
 - Cloudflare D1 for the normalized public directory;
 - HRSA's daily national health-center CSV as the first authoritative layer;
+- SAMHSA's official national mental-health and substance-use treatment directories;
 - U.S. Census ZCTA centroids for ZIP-to-nearby search;
 - the 211 National Data Platform free trial as the next, broader community-services source.
 
@@ -29,11 +30,15 @@ Official limits:
 
 - `worker/src/index.ts` validates and bounds public queries, resolves ZIP centroids, performs
   parameterized D1 searches, calculates distances, and returns Hearth's existing resource schema.
-- `worker/migrations/0001_initial.sql` creates the resource, ZIP-centroid, and import-audit tables.
+- `worker/migrations/0001_initial.sql` creates the resource, ZIP-centroid, and import-audit tables;
+  `0002_structured_contacts.sql` adds source-backed phone and intake contact arrays.
 - `scripts/import-hrsa.mjs` converts the official HRSA CSV into an idempotent D1 import. Missing
   records are tombstoned instead of silently deleted.
-- Imported HRSA listings are clearly marked as source-backed exceptions, not independently
-  verified Hearth records.
+- `scripts/import-samhsa.mjs` reads the two official Excel directories and their service-code
+  tabs, merges exact cross-directory locations, preserves intake lines, and generates a guarded
+  idempotent import. Listings without a public street address are intentionally omitted.
+- Imported HRSA and SAMHSA listings are clearly marked as source-backed exceptions, not
+  independently verified Hearth records.
 
 ## Local proof
 
@@ -51,6 +56,21 @@ Generate an import file:
 npm run directory:ingest:hrsa -- `
   --input=".\work\hrsa-health-centers.csv" `
   --output="worker\data\hrsa.sql"
+```
+
+Download the official SAMHSA directories and generate the deduplicated behavioral-health import:
+
+```powershell
+Invoke-WebRequest `
+  -Uri "https://www.samhsa.gov/data/sites/default/files/reports/rpt57009/2025_SU_Facilities_for_All_City_All.xlsx" `
+  -OutFile ".\work\samhsa-substance-use.xlsx"
+Invoke-WebRequest `
+  -Uri "https://www.samhsa.gov/data/sites/default/files/reports/rpt57010/2025_MH_Facilities_for_All_City_All.xlsx" `
+  -OutFile ".\work\samhsa-mental-health.xlsx"
+npm run directory:ingest:samhsa -- `
+  --substance-use=".\work\samhsa-substance-use.xlsx" `
+  --mental-health=".\work\samhsa-mental-health.xlsx" `
+  --output="worker\data\samhsa.sql"
 ```
 
 Download and extract the Census ZCTA Gazetteer, then generate the ZIP-centroid import:
@@ -90,7 +110,7 @@ The production database and Worker were created on July 26, 2026. For future cha
 
 1. Run `npx wrangler login` if the workstation is not authenticated.
 2. Apply new migrations with `npx wrangler d1 migrations apply hearth-directory --remote --config worker/wrangler.jsonc`.
-3. Generate current Census/HRSA imports and load each with `npx wrangler d1 execute hearth-directory --remote --config worker/wrangler.jsonc --file <generated-file>`.
+3. Generate current Census, HRSA, and SAMHSA imports and load each with `npx wrangler d1 execute hearth-directory --remote --config worker/wrangler.jsonc --file <generated-file>`.
 4. Deploy Worker changes with `npx wrangler deploy --config worker/wrangler.jsonc`.
 5. Keep `VITE_HEARTH_API_BASE_URL` set to the production API URL during the frontend build.
 
@@ -104,6 +124,9 @@ belong in Worker secrets.
 - `.github/workflows/refresh-directory.yml` runs every Monday: it downloads the official HRSA CSV,
   refuses to continue if fewer than 15,000 active rows normalize successfully, applies the
   idempotent import to D1, and reruns the production monitor.
+- `.github/workflows/refresh-samhsa.yml` checks the official directory workbooks monthly, requires
+  15,000–25,000 deduplicated public-address facilities and a fully recognized service codebook,
+  then applies the import and tests a known-good behavioral-health search.
 - The refresh workflow requires a scoped `CLOUDFLARE_API_TOKEN` repository secret and a
   `CLOUDFLARE_ACCOUNT_ID` repository variable. The token should be limited to the Hearth
   Cloudflare account and only the permissions Wrangler needs to edit D1.
@@ -119,5 +142,5 @@ npm run check:production
 ## Broader free data sequence
 
 1. Request the 211 National Data Platform free trial at <https://apiportal.211.org/get-started-overview>.
-2. Add SAMHSA behavioral-health and other federal category adapters.
+2. Add permitted legal-aid, food, and housing source adapters.
 3. Measure zero-result rates by ZIP and category before changing Hearth's coverage language.

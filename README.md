@@ -5,9 +5,10 @@ shelter, health, legal, and community-support resources for people who may be un
 
 **Live demo:** <https://automatedworkflowllc-design.github.io/hearth/>
 
-> The public build now connects to a nationwide health-center pilot backed by HRSA and Census
-> data. Food, shelter, legal, and broader community-support coverage is still being added; Hearth
-> directs people to 211 rather than implying those categories are nationally complete.
+> The public build now connects to nationwide HRSA health-center and SAMHSA behavioral-health
+> directory layers, positioned with Census ZIP data. Food, shelter, legal, and broader
+> community-support coverage is still being added; Hearth directs people to 211 rather than
+> implying those categories are nationally complete.
 
 ## Why this exists
 
@@ -47,8 +48,9 @@ interface ResourceProvider {
 - National ZIPs are sent to that service for nearby matching; GPS remains strictly opt-in.
 - Language and accessibility filters appear only when the provider supplies reviewed metadata.
 
-The first free backend implementation now includes a Cloudflare Worker/D1 search service, an
-18,885-site HRSA importer, and 33,791 Census ZIP centroids. See
+The free backend implementation now includes a Cloudflare Worker/D1 search service, an
+18,885-site HRSA importer, a 19,362-facility deduplicated SAMHSA importer, and 33,791 Census ZIP
+centroids. See
 [FREE-NATIONAL-BACKEND.md](./FREE-NATIONAL-BACKEND.md) for setup,
 [NATIONAL-SERVICE.md](./NATIONAL-SERVICE.md) for the source strategy, and
 [DATA-OPERATIONS.md](./DATA-OPERATIONS.md) for review cadence and corrections.
@@ -94,10 +96,11 @@ JavaScript.
 ## Honest limitations
 
 - The deployed demo currently covers Gainesville, Florida, not the nation.
-- The deployed national pilot currently covers HRSA-listed health centers. Broader category
-  coverage still requires approved 211 access, more source adapters, and ongoing human review.
-- Production is checked every six hours, and the guarded HRSA refresh runs weekly. The refresh
-  refuses suspiciously small upstream datasets before touching production.
+- The deployed national pilot covers HRSA-listed health centers and SAMHSA-listed mental-health
+  and substance-use treatment facilities. Broader categories still require approved 211 access,
+  more source adapters, and ongoing human review.
+- Production is checked every six hours. Guarded HRSA and SAMHSA refreshes refuse suspicious
+  upstream datasets before touching production.
 - Records change. Hearth shows review status but is not an emergency dispatch service. The product
   directs people to 211 for current community referrals, 988 for crisis support, and 911 for
   immediate danger.

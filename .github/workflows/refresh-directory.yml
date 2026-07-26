@@ -58,6 +58,12 @@ jobs:
             > "$RUNNER_TEMP/hrsa-summary.json"
           node -e "const fs=require('node:fs');const s=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/hrsa-summary.json','utf8'));if(s.imported<15000)throw new Error('HRSA safety gate failed: only '+s.imported+' active rows.');console.log(JSON.stringify(s,null,2));"
 
+      - name: Apply database migrations
+        run: >
+          npx wrangler d1 migrations apply hearth-directory
+          --remote
+          --config worker/wrangler.jsonc
+
       - name: Apply the validated refresh to production D1
         run: >
           npx wrangler d1 execute hearth-directory

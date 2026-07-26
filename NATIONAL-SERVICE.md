@@ -29,6 +29,8 @@ The first directory-service implementation now lives in `worker/`:
 - a Cloudflare Worker exposes the existing `GET /v1/resources/search` contract;
 - D1 migrations create normalized resource, ZIP-centroid, and import-audit tables;
 - the HRSA adapter imports 18,885 active national health-center sites from the current daily CSV;
+- the SAMHSA adapter merges the official mental-health and substance-use directories into 19,362
+  public-address facilities with decoded services and structured phone/intake contacts;
 - the Census adapter imports 33,791 official 2025 ZCTA centroids for no-cost nearby ZIP search;
 - every imported result retains government provenance and is labeled as not independently
   confirmed by Hearth.
@@ -54,12 +56,13 @@ index with source-specific adapters and transparent provenance.
    services.
    - <https://data.hrsa.gov/topics/health-centers>
    - <https://data.hrsa.gov/tools/web-services>
-3. **SAMHSA national directories — qualified behavioral-health supplement.** The N-SUMHSS
+3. **SAMHSA national directories — implemented behavioral-health supplement.** The N-SUMHSS
    public-use research file does not expose the facility names, addresses, or phone numbers Hearth
    needs for listings. SAMHSA's official 2025 mental-health and substance-use Excel directories
-   do include those contact details and service codes, so those workbooks are the appropriate
-   ingestion candidates. Treat them as annual, self-reported snapshots, preserve their publication
-   date, and verify details before travel.
+   do include those contact details and service codes. Hearth imports those workbooks, merges exact
+   locations across both directories, omits records whose public street address is withheld, and
+   uses ZIP centroids only as disclosed approximate map positions. Treat the result as an annual,
+   facility-reported snapshot and verify details before travel.
    - <https://www.samhsa.gov/data/data-we-collect/n-sumhss-national-substance-use-and-mental-health-services-survey/national-directories>
    - <https://www.samhsa.gov/data/data-we-collect/n-sumhss-national-substance-use-and-mental-health-services-survey/datafiles/2024>
 4. **Legal Services Corporation — legal-aid seed and reconciliation source.** LSC reports
@@ -118,10 +121,10 @@ choose the displayed value through a documented source-precedence rule, and crea
 
 1. Authenticate Wrangler to the project's free Cloudflare account and deploy the implemented
    Worker/D1 service.
-2. Load the implemented Census and HRSA adapters, then connect the public frontend.
+2. Load the implemented Census, HRSA, and SAMHSA adapters, then connect the public frontend.
 3. Obtain permission and credentials for the 211 National Data Platform and add it as the broader
    community-services source.
-4. Add SAMHSA/LSC supplements and implement the review workflow in `DATA-OPERATIONS.md`.
+4. Add a permitted LSC supplement and implement the review workflow in `DATA-OPERATIONS.md`.
 5. Run a pilot across several urban, rural, and tribal ZIP codes before making a national-coverage
    claim.
 6. Monitor query failures, zero-result ZIPs, stale records, and correction turnaround.

@@ -1,4 +1,4 @@
-# Live data sources for the ResourceProvider — verified 2026-07-25
+# Live data sources for the ResourceProvider — verified 2026-07-26
 
 Research for making the `ResourceProvider` seam real (a live feed instead of the bundled
 Gainesville dataset). 48 candidates were scouted and each was then **adversarially verified by
@@ -25,7 +25,7 @@ All of these returned real data to an unauthenticated request during verificatio
 
 | Source | Category | Notes |
 |---|---|---|
-| **SAMHSA FindTreatment locator** — `findtreatment.gov/locator/exportsAsJson/v2` | Substance use + mental health | Verified live: a Gainesville query returned 21 real facilities. Best free source for behavioral health. |
+| **SAMHSA 2025 National Directories** — `samhsa.gov/data/.../national-directories` | Substance use + mental health | Official Excel workbooks, published March 6, 2026 from the 2024 N-SUMHSS. Hearth imports 19,362 facilities with public street addresses and retains separate intake contacts. |
 | **HRSA health centers / FQHCs** — `data.hrsa.gov/data/download` | Health | Bulk CSV/XLSX, HTTP 200 verified. Includes **sliding-fee-scale** clinics — exactly the right population for a crisis finder. |
 | **HUD Housing Counseling agencies** — `data.hud.gov/Housing_Counselor/searchByLocation` | Housing (advisory) | Verified live for Gainesville. Counseling only — **not emergency beds**. |
 | **USDA SNAP retailers** — ArcGIS FeatureServer | Food retail | 253,894 records. See the caution below. |

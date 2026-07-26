@@ -10,10 +10,12 @@ function healthEnvironment({
   activeResources = 18_885,
   zipCentroids = 33_791,
   completedAt = new Date().toISOString(),
+  sources = { HRSA: 18_885 },
 }: {
   activeResources?: number;
   zipCentroids?: number;
   completedAt?: string;
+  sources?: Record<string, number>;
 } = {}) {
   return {
     DB: {
@@ -23,6 +25,14 @@ function healthEnvironment({
             return this;
           },
           async all<T>() {
+            if (sql.includes('GROUP BY source_name')) {
+              return {
+                results: Object.entries(sources).map(([source_name, total]) => ({
+                  source_name,
+                  total,
+                })) as T[],
+              };
+            }
             return { results: [] as T[] };
           },
           async first<T>() {
@@ -95,6 +105,7 @@ describe('national directory worker', () => {
         longitude: -82.3248,
         phone: '352-555-0100',
         website: 'example.org',
+        contacts_json: '[]',
         hours_text: 'Call to confirm current hours.',
         eligibility: 'Call to confirm.',
         services_json: '["Primary health care"]',
@@ -122,6 +133,62 @@ describe('national directory worker', () => {
     expect(resource.distanceMiles).toBeGreaterThanOrEqual(0);
   });
 
+  it('maps structured SAMHSA phone and intake contacts', () => {
+    const resource = rowToResource({
+      id: 'samhsa:example',
+      source_name: 'SAMHSA',
+      source_url: 'https://www.samhsa.gov/data/',
+      source_updated_at: '2026-03-06T00:00:00.000Z',
+      fetched_at: '2026-07-26T00:00:00.000Z',
+      name: 'Example Behavioral Health',
+      category: 'health',
+      description: 'A SAMHSA directory facility.',
+      address: '100 Main St',
+      city: 'Gainesville',
+      state: 'FL',
+      zip_code: '32601',
+      latitude: 29.6516,
+      longitude: -82.3248,
+      phone: '352-555-0100',
+      website: null,
+      contacts_json: JSON.stringify([
+        {
+          type: 'phone',
+          label: 'Main phone',
+          value: '352-555-0100',
+          primary: true,
+        },
+        {
+          type: 'intake',
+          label: 'Intake line',
+          value: '877-555-0101 x2',
+        },
+      ]),
+      hours_text: 'Call to confirm current hours.',
+      eligibility: 'Call to confirm.',
+      services_json: '["Mental health treatment"]',
+      tags_json: '["behavioral health","mental health"]',
+      review_status: 'exception',
+      review_note: 'Facility-reported listing.',
+      reviewed_at: '2026-07-26T00:00:00.000Z',
+      review_due_at: '2026-07-26T00:00:00.000Z',
+    });
+
+    expect(resource.contacts).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: 'phone',
+          href: 'tel:3525550100',
+          primary: true,
+        }),
+        expect.objectContaining({
+          type: 'intake',
+          href: 'tel:8775550101;ext=2',
+        }),
+      ])
+    );
+  });
+
   it('reports database counts and import freshness from the health endpoint', async () => {
     const response = await handleRequest(
       new Request('https://directory.example/health', {
@@ -138,6 +205,7 @@ describe('national directory worker', () => {
       data: {
         activeResources: 18_885,
         zipCentroids: 33_791,
+        sources: { HRSA: 18_885 },
         fresh: true,
         latestImport: {
           source: 'HRSA',

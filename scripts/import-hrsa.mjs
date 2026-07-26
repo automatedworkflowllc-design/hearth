@@ -25,6 +25,7 @@ const RESOURCE_COLUMNS = [
   'longitude',
   'phone',
   'website',
+  'contacts_json',
   'hours_text',
   'eligibility',
   'services_json',
@@ -100,6 +101,26 @@ export function normalizeHrsaRow(row, fetchedAt) {
   const description =
     `${name} is an active health-center service site listed by the U.S. Health Resources and Services Administration.` +
     ' Call the site to confirm available services, costs, eligibility, and appointment requirements.';
+  const phone = text(row['Site Telephone Number']);
+  const officialWebsite = website(row['Site Web Address']);
+  const contacts = [
+    phone
+      ? {
+          type: 'phone',
+          label: 'Main phone',
+          value: phone,
+          primary: true,
+          note: 'Call to confirm services, eligibility, and current hours.',
+        }
+      : undefined,
+    officialWebsite
+      ? {
+          type: 'website',
+          label: 'Official website',
+          value: officialWebsite,
+        }
+      : undefined,
+  ].filter(Boolean);
 
   return {
     id: `hrsa:${sourceId}`,
@@ -117,8 +138,9 @@ export function normalizeHrsaRow(row, fetchedAt) {
     zipCode,
     latitude: number(row['Geocoding Artifact Address Primary Y Coordinate']),
     longitude: number(row['Geocoding Artifact Address Primary X Coordinate']),
-    phone: text(row['Site Telephone Number']),
-    website: website(row['Site Web Address']),
+    phone,
+    website: officialWebsite,
+    contactsJson: JSON.stringify(contacts),
     hoursText: hoursPerWeek
       ? `${hoursPerWeek} operating hours per week; call for the current daily schedule.`
       : 'Call to confirm current hours.',
@@ -165,6 +187,7 @@ function recordValues(record) {
     record.longitude,
     record.phone,
     record.website,
+    record.contactsJson,
     record.hoursText,
     record.eligibility,
     record.servicesJson,
