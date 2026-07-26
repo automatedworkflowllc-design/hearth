@@ -42,13 +42,31 @@ export function searchResources(
   tags: string[] = [],
   userLocation?: Location,
   sortBy: 'distance' | 'name' | 'relevance' = 'relevance',
-  dataset: Resource[] = mockResources
+  dataset: Resource[] = mockResources,
+  additionalFilters: {
+    language?: string;
+    wheelchairAccessibleOnly?: boolean;
+  } = {}
 ): Resource[] {
   const normalizedQuery = query.trim().toLowerCase();
   const normalizedCategory = category.trim().toLowerCase();
   const normalizedCity = cityFilter.trim().toLowerCase();
 
   let results = dataset.filter(resource => {
+    if (additionalFilters.language && additionalFilters.language !== 'all') {
+      const supportsLanguage = resource.languages?.some(
+        (language) => language.code.toLowerCase() === additionalFilters.language?.toLowerCase()
+      );
+      if (!supportsLanguage) return false;
+    }
+
+    if (
+      additionalFilters.wheelchairAccessibleOnly &&
+      resource.accessibility?.wheelchair !== 'yes'
+    ) {
+      return false;
+    }
+
     // 1. Category Filter
     if (normalizedCategory !== '' && normalizedCategory !== 'all' && normalizedCategory !== 'all categories') {
       if (resource.category.toLowerCase() !== normalizedCategory) {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // The map is verified in-browser, not in jsdom (leaflet-in-jsdom is the theater the audit
@@ -31,16 +31,31 @@ describe('App integration', () => {
     render(<App />);
     await screen.findByText(RESOURCE);
     fireEvent.change(screen.getByLabelText(/search resources/i), { target: { value: 'peaceful' } });
-    expect(screen.getByText(/Peaceful Paths/i)).toBeInTheDocument();
-    expect(screen.queryByText(RESOURCE)).not.toBeInTheDocument();
+    expect(await screen.findByText(/Peaceful Paths/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText(RESOURCE)).not.toBeInTheDocument());
   });
 
   it('filters resources by category pill', async () => {
     render(<App />);
     await screen.findByText(RESOURCE);
     fireEvent.click(screen.getByRole('button', { name: /legal aid/i }));
-    expect(screen.getByText('Three Rivers Legal Services')).toBeInTheDocument();
-    expect(screen.queryByText(RESOURCE)).not.toBeInTheDocument();
+    expect(await screen.findByText('Three Rivers Legal Services')).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText(RESOURCE)).not.toBeInTheDocument());
+  });
+
+  it('offers quick-need paths that filter the directory', async () => {
+    render(<App />);
+    await screen.findByText(RESOURCE);
+    fireEvent.click(screen.getByRole('button', { name: /a safe place/i }));
+    expect(await screen.findByText('GRACE Marketplace')).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText(RESOURCE)).not.toBeInTheDocument());
+  });
+
+  it('moves to the results when the search form is submitted', async () => {
+    render(<App />);
+    await screen.findByText(RESOURCE);
+    fireEvent.click(screen.getByRole('button', { name: /find help/i }));
+    expect(screen.getByRole('heading', { name: /help near you/i })).toHaveFocus();
   });
 
   it('navbar search button focuses the search field (it used to be inert)', async () => {

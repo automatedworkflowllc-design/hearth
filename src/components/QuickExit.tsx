@@ -49,7 +49,7 @@ export const QuickExit: React.FC = () => {
       onClick={leaveQuickly}
       aria-label="Leave quickly — go to a neutral website"
       title="Leave this site immediately (or press Escape three times). Afterward, clear your browser history to remove the visit."
-      className="fixed bottom-4 right-4 z-50 inline-flex items-center gap-2 rounded-full bg-nav px-4 py-2.5 text-sm font-bold text-on-nav shadow-lg transition-colors hover:bg-nav-hover"
+      className="fixed bottom-4 right-4 z-50 inline-flex min-h-11 items-center gap-2 rounded-full bg-nav px-4 py-2.5 text-sm font-bold text-on-nav shadow-lg transition-colors hover:bg-nav-hover"
     >
       <DoorOpen className="h-4 w-4" aria-hidden="true" />
       Leave quickly

@@ -52,10 +52,12 @@ Legal→`legal`, Community→`support`.
 ## Legal
 7. **Three Rivers Legal Services (Gainesville)** — `legal`
    - Free civil legal services for low-income clients (abused/disabled/elderly focus).
-   - Phone (352) 372-0519 · 1000 NE 16th Ave, Gainesville, FL 32601 · https://www.trls.org
-   - Hours: Mon–Fri 8:30–5. Eligibility: ~≤200% FPL.
-   - src: FL Attorney General victim-services dir + probono.net + statesidelegal.org · verified ✓ (via directories)
-   - ⚠ Official site returned HTTP 403 to automated fetch → phone confirmed via 3 authoritative directories, NOT the org site. **Human confirmation call recommended before publishing.**
+   - Intake (866) 256-8091 · Gainesville office (352) 372-0519 · 1000 NE 16th Ave,
+     Building I, Gainesville, FL 32601 · https://www.trls.org/apply-online/
+   - Helpline: Mon–Thu 9–4:30 (closed 12–1); Fri 9–11:30. Eligibility varies by income,
+     household, assets, case type, funding source, and immigration status; intake confirms.
+   - src: https://www.trls.org/apply-online/ and https://www.trls.org/who-is-eligible/
+     · directly verified on the official site 2026-07-25 ✓
 8. **Southern Legal Counsel** — `legal`
    - FL statewide public-interest firm: disability, LGBTQ+ equality, rights of people experiencing homelessness.
    - Phone (352) 271-8890 · 1229 NW 12th Ave, Gainesville, FL 32601 · https://www.southernlegal.org
@@ -65,7 +67,8 @@ Legal→`legal`, Community→`support`.
 ## Community
 9. **United Way of North Central Florida (2-1-1)** — `support`
    - Runs the free, confidential 24/7 2-1-1 helpline to food/housing/health/crisis resources.
-   - Phone: dial **211** or (352) 332-4636 (24/7); office (352) 331-2800 · 6031 NW 1st Pl, Gainesville, FL 32607 · https://www.unitedwayncfl.org/211
+   - Phone: dial **211** or (352) 332-4636; text a ZIP code to **898-211**; chat at
+     https://www.hfuw.org/chat/ · 6031 NW 1st Pl, Gainesville, FL 32607
    - Hours: 211 line 24/7; office Mon–Fri 8:30–4:30.
    - src: https://www.unitedwayncfl.org/contact-us · verified ✓ — the region's best single "start here" line.
 10. **Peaceful Paths Domestic Abuse Network** — `support`

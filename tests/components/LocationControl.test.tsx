@@ -18,7 +18,7 @@ describe('LocationControl ZIP fallback (on-device, no network)', () => {
     const onSetZip = vi.fn();
     render(<LocationControl {...baseProps} onSetZip={onSetZip} />);
 
-    fireEvent.change(screen.getByLabelText(/gainesville-area zip/i), { target: { value: '32601' } });
+    fireEvent.change(screen.getByLabelText(/zip code/i), { target: { value: '32601' } });
     fireEvent.click(screen.getByRole('button', { name: /^set$/i }));
 
     expect(onSetZip).toHaveBeenCalledTimes(1);
@@ -32,10 +32,29 @@ describe('LocationControl ZIP fallback (on-device, no network)', () => {
     const onSetZip = vi.fn();
     render(<LocationControl {...baseProps} onSetZip={onSetZip} />);
 
-    fireEvent.change(screen.getByLabelText(/gainesville-area zip/i), { target: { value: '90210' } });
+    fireEvent.change(screen.getByLabelText(/zip code/i), { target: { value: '90210' } });
     fireEvent.click(screen.getByRole('button', { name: /^set$/i }));
 
     expect(onSetZip).not.toHaveBeenCalled();
     expect(screen.getByText(/outside our Gainesville-area demo coverage/i)).toBeInTheDocument();
+  });
+
+  it('accepts any valid US ZIP when the national provider is active', () => {
+    const onSetZip = vi.fn();
+    const onSetPostalCode = vi.fn();
+    render(
+      <LocationControl
+        {...baseProps}
+        onSetZip={onSetZip}
+        onSetPostalCode={onSetPostalCode}
+        nationalCoverage
+      />
+    );
+
+    fireEvent.change(screen.getByLabelText(/zip code/i), { target: { value: '90210' } });
+    fireEvent.click(screen.getByRole('button', { name: /^set$/i }));
+
+    expect(onSetPostalCode).toHaveBeenCalledWith('90210');
+    expect(onSetZip).not.toHaveBeenCalled();
   });
 });

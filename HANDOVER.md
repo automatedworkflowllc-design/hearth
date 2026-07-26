@@ -1,5 +1,12 @@
 # Hearth — handover
 
+> **Post-handover update (2026-07-25):** The provider seam is now query-based rather than
+> load-all, the frontend includes a national proxy adapter, and records have structured contacts,
+> provenance, review states, correction links, and conditional access/language metadata. The
+> original snapshot below remains useful history, but its test counts and “one-line provider swap”
+> description are superseded by [NATIONAL-SERVICE.md](./NATIONAL-SERVICE.md),
+> [DATA-OPERATIONS.md](./DATA-OPERATIONS.md), and the current [PROJECT.md](./PROJECT.md).
+
 Written 2026-07-25 for a reviewer with no prior context. Everything below was verified against
 the repo at commit `895f850`, not recalled.
 
@@ -97,10 +104,11 @@ a justification that was incomplete or false.** The review caught the comment, n
 
 Honest list of where I think the risk actually is:
 
-1. **`VERIFIED-ORGS.md` provenance.** This is real data about real organizations. Three Rivers Legal's
-   phone came from third-party directories (their site blocked automated access) and is flagged
-   pending a human confirmation call. **Nobody has made that call.** If any listing is wrong, a person
-   in crisis reaches a dead line. This is the highest-stakes thing in the repo and it is data, not code.
+1. **`VERIFIED-ORGS.md` provenance.** This is real data about real organizations. Three Rivers
+   Legal's official site became directly accessible during the 2026-07-25 release review, so its
+   intake number, Gainesville office, helpline hours, eligibility wording, and online intake were
+   updated from that first-party source. If any listing is wrong, a person in crisis reaches a dead
+   line. This is the highest-stakes thing in the repo and it is data, not code.
 2. **Copy that makes claims.** Grep for "verified", "free", "always", "no cost". Each one should be
    traceable to something we actually guarantee. We tightened these twice and still found leftovers.
 3. **The high-contrast theme.** It has broken three separate times in ways that only appear when you

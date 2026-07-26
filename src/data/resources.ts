@@ -1,15 +1,15 @@
-import type { Resource } from '../types/index.ts';
+import type { ContactMethod, Resource, ResourceReview } from '../types/index.ts';
+import { phoneHref } from '../utils/contact';
 
 // Verified real Gainesville, FL community resources (source of record: VERIFIED-ORGS.md).
 // Names/phones/addresses were confirmed against each org's own official site on 2026-07-22,
-// with disclosed exceptions: Three Rivers Legal's phone came from authoritative directories
-// (its site blocked automated reads) and is marked pending a human call; Equal Access
+// with Three Rivers Legal re-reviewed against its official site on 2026-07-25. Equal Access
 // publishes no phone (shown as walk-in). Two highest-stakes items were re-verified by hand:
 // the St. Francis House closure -> dropped, and the Peaceful Paths DV hotline. Coordinates are geocoded from the verified street
 // addresses via OpenStreetMap, never hand-guessed; the one exception is flagged inline.
 // This is a DEMO dataset for a single city; the ResourceProvider seam is where a real
 // national 211 / Open Referral HSDS feed would plug in (see PROJECT.md / case study).
-export const mockResources: Resource[] = [
+const rawResources: Array<Omit<Resource, 'contacts' | 'review'>> = [
   // ---- FOOD ----
   {
     id: 'bread-of-the-mighty',
@@ -128,14 +128,14 @@ export const mockResources: Resource[] = [
     name: 'Three Rivers Legal Services',
     category: 'legal',
     description: 'Nonprofit law firm providing free civil legal services to eligible low-income clients, with emphasis on abused, disabled, and elderly individuals.',
-    address: '1000 NE 16th Ave, Gainesville, FL 32601',
+    address: '1000 NE 16th Ave, Building I, Gainesville, FL 32601',
     location: { city: 'Gainesville', state: 'FL', zipCode: '32601', lat: 29.6670757, lng: -82.3136879 },
-    phone: '(352) 372-0519',
-    website: 'https://www.trls.org',
-    hours: 'Mon-Fri 8:30 AM - 5:00 PM (phone number pending direct confirmation)',
-    eligibility: 'Income-based (roughly at or below 200% of the federal poverty level).',
+    phone: '(866) 256-8091',
+    website: 'https://www.trls.org/apply-online/',
+    hours: 'Legal helpline Mon-Thu 9:00 AM-4:30 PM (closed 12:00-1:00 PM); Fri 9:00-11:30 AM',
+    eligibility: 'Generally income-based; household size, assets, case type, funding source, and immigration status may affect eligibility. Call intake to confirm.',
     availability: 'Free legal aid',
-    lastVerified: '2026-07-22',
+    lastVerified: '2026-07-25',
     tags: ['legal', 'free', 'civil', 'low-income', 'gainesville'],
   },
   {
@@ -185,3 +185,155 @@ export const mockResources: Resource[] = [
     tags: ['support', 'domestic violence', 'crisis', 'shelter', 'hotline', 'gainesville'],
   },
 ];
+
+const sourceUrls: Record<string, string> = {
+  'bread-of-the-mighty': 'https://breadofthemighty.org/contact-us',
+  'catholic-charities-gnv': 'https://www.catholiccharitiesgainesville.org/contact',
+  'grace-marketplace': 'https://www.gracemarketplace.org/contact-us',
+  'family-promise-gnv': 'https://www.familypromisegvl.org/contact',
+  'helping-hands-clinic': 'https://helpinghandsclinic.us',
+  'equal-access-clinic': 'https://equalaccess.med.ufl.edu',
+  'acorn-clinic': 'https://acornclinic.org/contact/',
+  'three-rivers-legal': 'https://www.trls.org/apply-online/',
+  'southern-legal-counsel': 'https://www.southernlegal.org/contact',
+  'united-way-211': 'https://www.unitedwayncfl.org/contact-us',
+  'peaceful-paths': 'https://www.peacefulpaths.org',
+};
+
+function buildContacts(resource: Omit<Resource, 'contacts' | 'review'>): ContactMethod[] {
+  if (resource.id === 'united-way-211') {
+    return [
+      { type: 'phone', label: 'Call 211', value: '211', href: 'tel:211', primary: true },
+      {
+        type: 'phone',
+        label: 'Alternate number',
+        value: '(352) 332-4636',
+        href: 'tel:3523324636',
+      },
+      {
+        type: 'sms',
+        label: 'Text your ZIP code',
+        value: '898-211',
+        href: 'sms:898211',
+        note: 'Send your ZIP code in the message.',
+      },
+      {
+        type: 'chat',
+        label: 'Chat with 211',
+        value: 'hfuw.org/chat',
+        href: 'https://www.hfuw.org/chat/',
+      },
+      {
+        type: 'website',
+        label: 'Official website',
+        value: 'unitedwayncfl.org/211',
+        href: resource.website!,
+      },
+    ];
+  }
+
+  if (resource.id === 'three-rivers-legal') {
+    return [
+      {
+        type: 'phone',
+        label: 'Call legal intake',
+        value: '(866) 256-8091',
+        href: 'tel:18662568091',
+        primary: true,
+      },
+      {
+        type: 'intake',
+        label: 'Apply online',
+        value: 'trls.org/apply-online',
+        href: resource.website!,
+      },
+      {
+        type: 'phone',
+        label: 'Gainesville office',
+        value: '(352) 372-0519',
+        href: 'tel:3523720519',
+      },
+    ];
+  }
+
+  const contacts: ContactMethod[] = [];
+  if (resource.phone) {
+    contacts.push({
+      type: 'phone',
+      label: resource.id === 'peaceful-paths' ? 'Call the crisis hotline' : 'Call',
+      value: resource.phone,
+      href: phoneHref(resource.phone),
+      primary: true,
+    });
+  }
+  if (resource.id === 'peaceful-paths') {
+    contacts.push({
+      type: 'sms',
+      label: 'Text the crisis line',
+      value: '(352) 727-0948',
+      href: 'sms:3527270948',
+    });
+  }
+  if (resource.email) {
+    contacts.push({
+      type: 'email',
+      label: 'Email',
+      value: resource.email,
+      href: `mailto:${resource.email}`,
+    });
+  }
+  if (resource.website) {
+    contacts.push({
+      type: resource.id === 'southern-legal-counsel' ? 'intake' : 'website',
+      label: resource.id === 'southern-legal-counsel' ? 'Online intake' : 'Official website',
+      value: new URL(resource.website).hostname.replace(/^www\./, ''),
+      href: resource.website,
+      primary: contacts.length === 0,
+    });
+  }
+  return contacts;
+}
+
+function buildReview(resource: Omit<Resource, 'contacts' | 'review'>): ResourceReview {
+  const sources = resource.id === 'three-rivers-legal'
+    ? [
+        {
+          name: 'Three Rivers Legal — apply for services',
+          url: 'https://www.trls.org/apply-online/',
+          kind: 'official' as const,
+        },
+        {
+          name: 'Three Rivers Legal — eligibility',
+          url: 'https://www.trls.org/who-is-eligible/',
+          kind: 'official' as const,
+        },
+      ]
+    : [
+        {
+          name: 'Official organization source',
+          url: sourceUrls[resource.id] ?? resource.website ?? '',
+          kind: 'official' as const,
+        },
+      ].filter((source) => source.url);
+
+  return {
+    reviewedAt: resource.lastVerified ?? '2026-07-22',
+    reviewDueAt: resource.id === 'three-rivers-legal' ? '2026-10-25' : '2026-10-22',
+    status: 'standard',
+    sources,
+  };
+}
+
+/** Shipping records use structured contacts and an explicit review lifecycle. */
+export const mockResources: Resource[] = rawResources.map((rawResource) => {
+  const contacts = buildContacts(rawResource);
+  const review = buildReview(rawResource);
+  const {
+    phone: _phone,
+    email: _email,
+    website: _website,
+    lastVerified: _lastVerified,
+    ...resource
+  } = rawResource;
+  return { ...resource, contacts, review };
+});

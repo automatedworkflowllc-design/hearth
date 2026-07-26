@@ -10,21 +10,21 @@ const fixture: Resource[] = [
     description: 'Free groceries for families in need.',
     address: '1 Alpha St, Gainesville, FL',
     location: { city: 'Gainesville', state: 'FL', zipCode: '32601', lat: 29.6516, lng: -82.3248 },
-    hours: 'Mon 9-5', tags: ['food', 'pantry'],
+    contacts: [], hours: 'Mon 9-5', tags: ['food', 'pantry'],
   },
   {
     id: 'beta', name: 'Beta Emergency Shelter', category: 'shelter',
     description: 'Overnight beds and meals.',
     address: '2 Beta Ave, Gainesville, FL',
     location: { city: 'Gainesville', state: 'FL', zipCode: '32609', lat: 29.7000, lng: -82.3000 },
-    hours: '24/7', tags: ['shelter', 'beds'],
+    contacts: [], hours: '24/7', tags: ['shelter', 'beds'],
   },
   {
     id: 'gamma', name: 'Gamma Legal Aid', category: 'legal',
     description: 'Free civil legal help.',
     // No coordinates on purpose -- exercises the "missing coords sorts last" path.
     location: { city: 'Gainesville', state: 'FL', zipCode: '32601' },
-    hours: 'Mon-Fri 9-5', tags: ['legal'],
+    contacts: [], hours: 'Mon-Fri 9-5', tags: ['legal'],
   },
 ];
 
@@ -82,8 +82,8 @@ describe('distance behavior (the audited 0,0 bug)', () => {
 
   it('treats NaN coordinates as missing -- no bogus "0 mi nearest"', () => {
     const withNaN: Resource[] = [
-      { id: 'good', name: 'Good', category: 'food', description: 'x', location: { lat: 29.66, lng: -82.33 }, hours: '', tags: [] },
-      { id: 'nan', name: 'Nan', category: 'food', description: 'x', location: { lat: NaN, lng: NaN }, hours: '', tags: [] },
+      { id: 'good', name: 'Good', category: 'food', description: 'x', location: { lat: 29.66, lng: -82.33 }, contacts: [], hours: '', tags: [] },
+      { id: 'nan', name: 'Nan', category: 'food', description: 'x', location: { lat: NaN, lng: NaN }, contacts: [], hours: '', tags: [] },
     ];
     const r = searchResources('', 'all', 'all', [], { lat: 29.66, lng: -82.33 }, 'distance', withNaN);
     expect(r.find((x) => x.id === 'nan')!.distanceMiles).toBeUndefined();

@@ -16,11 +16,40 @@ export interface HoursOfOperation {
   closed?: boolean;
 }
 
-export interface ContactInfo {
-  phone: string;
-  email?: string;
-  website?: string;
-  emergencyPhone?: string;
+export type ContactMethodType = 'phone' | 'sms' | 'email' | 'website' | 'chat' | 'intake';
+
+export interface ContactMethod {
+  type: ContactMethodType;
+  label: string;
+  value: string;
+  href: string;
+  primary?: boolean;
+  note?: string;
+}
+
+export interface ResourceSource {
+  name: string;
+  url: string;
+  kind: 'official' | 'government' | 'directory';
+}
+
+export interface ResourceReview {
+  reviewedAt: string;
+  reviewDueAt: string;
+  status?: 'standard' | 'exception';
+  note?: string;
+  sources: ResourceSource[];
+}
+
+export interface ResourceLanguage {
+  code: string;
+  label: string;
+  access: 'service' | 'interpretation' | 'materials';
+}
+
+export interface ResourceAccessibility {
+  wheelchair: 'yes' | 'no' | 'unknown';
+  notes?: string[];
 }
 
 export type AvailabilityStatus = 'open' | 'closed' | 'limited' | 'unknown';
@@ -33,10 +62,7 @@ export interface Resource {
   description: string;
   address?: string;
   location: Location;
-  contact?: ContactInfo;
-  phone?: string;
-  email?: string;
-  website?: string;
+  contacts: ContactMethod[];
   hours: string | HoursOfOperation[];
   eligibility?: string;
   services?: string[];
@@ -45,8 +71,43 @@ export interface Resource {
   availability?: string;
   availabilityStatus?: AvailabilityStatus;
   distanceMiles?: number;
+  review?: ResourceReview;
+  languages?: ResourceLanguage[];
+  accessibility?: ResourceAccessibility;
+
+  /** @deprecated Compatibility fields for external providers during migration. */
+  phone?: string;
+  email?: string;
+  website?: string;
+  lastVerified?: string;
   wheelchairAccessible?: boolean;
-  lastVerified?: string; // ISO date the org's details were last confirmed against its official source
+}
+
+export interface DirectoryFacets {
+  languages: { code: string; label: string }[];
+  hasWheelchairData: boolean;
+}
+
+export interface ResourceSearchRequest {
+  query?: string;
+  category?: string;
+  city?: string;
+  tags?: string[];
+  userLocation?: Location;
+  sortBy?: 'distance' | 'name' | 'relevance';
+  language?: string;
+  wheelchairAccessibleOnly?: boolean;
+  limit?: number;
+  cursor?: string;
+  signal?: AbortSignal;
+}
+
+export interface ResourceSearchResponse {
+  resources: Resource[];
+  total: number;
+  facets: DirectoryFacets;
+  nextCursor?: string;
+  generatedAt?: string;
 }
 
 export interface FilterOptions {
@@ -58,6 +119,7 @@ export interface FilterOptions {
     lat: number;
     lng: number;
   };
+  language?: string;
   wheelchairAccessibleOnly?: boolean;
   openNowOnly?: boolean;
 }

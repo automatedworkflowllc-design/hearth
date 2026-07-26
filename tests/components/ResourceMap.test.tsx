@@ -22,8 +22,8 @@ vi.mock('leaflet', () => ({ default: { divIcon: () => ({}) } }));
 import { ResourceMap } from '../../src/components/ResourceMap';
 
 const data: Resource[] = [
-  { id: 'mapped', name: 'Mapped Org', category: 'food', description: 'x', location: { lat: 29.66, lng: -82.33 }, hours: '', tags: [] },
-  { id: 'nocoord', name: 'No Coord Org', category: 'shelter', description: 'x', location: { city: 'Gainesville' }, hours: '', tags: [] },
+  { id: 'mapped', name: 'Mapped Org', category: 'food', description: 'x', location: { lat: 29.66, lng: -82.33 }, contacts: [], hours: '', tags: [] },
+  { id: 'nocoord', name: 'No Coord Org', category: 'shelter', description: 'x', location: { city: 'Gainesville' }, contacts: [], hours: '', tags: [] },
 ];
 
 describe('ResourceMap coord handling (the 0,0 locus)', () => {

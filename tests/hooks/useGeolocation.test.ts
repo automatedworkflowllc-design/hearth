@@ -43,6 +43,19 @@ describe('useGeolocation (privacy posture)', () => {
     const { result } = renderHook(() => useGeolocation());
     act(() => result.current.setFromZip({ lat: 29.7, lng: -82.4 }, '32605'));
     expect(getCurrentPosition).not.toHaveBeenCalled();
-    expect(result.current.location).toMatchObject({ lat: 29.7, lng: -82.4, source: 'zip', label: '32605' });
+    expect(result.current.location).toMatchObject({
+      lat: 29.7,
+      lng: -82.4,
+      zipCode: '32605',
+      source: 'zip',
+      label: '32605',
+    });
+  });
+
+  it('setFromPostalCode stores a national ZIP without inventing precise coordinates', () => {
+    const { result } = renderHook(() => useGeolocation());
+    act(() => result.current.setFromPostalCode('90210'));
+    expect(getCurrentPosition).not.toHaveBeenCalled();
+    expect(result.current.location).toEqual({ zipCode: '90210', source: 'zip', label: '90210' });
   });
 });

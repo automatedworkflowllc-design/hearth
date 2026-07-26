@@ -12,7 +12,14 @@ interface BrandMarkProps {
  * text-color context. Mirrored exactly in public/favicon.svg.
  */
 export const BrandMark: React.FC<BrandMarkProps> = ({ className, title = 'Hearth' }) => (
-  <svg viewBox="0 0 64 64" role="img" aria-label={title} className={className} xmlns="http://www.w3.org/2000/svg">
+  <svg
+    viewBox="0 0 64 64"
+    role={title ? 'img' : undefined}
+    aria-label={title || undefined}
+    aria-hidden={title ? undefined : true}
+    className={className}
+    xmlns="http://www.w3.org/2000/svg"
+  >
     <defs>
       <radialGradient id="hearth-ember" cx="50%" cy="38%" r="65%">
         <stop offset="0" stopColor="#f7c25a" />

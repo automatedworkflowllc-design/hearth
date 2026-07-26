@@ -1,11 +1,11 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 @import '@fontsource/bricolage-grotesque/500.css';
 @import '@fontsource/bricolage-grotesque/600.css';
 @import '@fontsource/bricolage-grotesque/800.css';
 @import '@fontsource/fraunces/600-italic.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* Standard Theme Variables -- "Hearth" warm/bold identity (2026-07-24 redesign).
    AA-checked (relative-luminance formula, verified by an adversarial contrast review):

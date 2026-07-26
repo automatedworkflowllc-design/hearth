@@ -75,9 +75,9 @@ export const ResourceMap: React.FC<ResourceMapProps> = ({ resources, userLocatio
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           <FitToMarkers points={fitPoints} fitKey={fitKey} />
-          {userLocation && (
+          {userLocation && Number.isFinite(userLocation.lat) && Number.isFinite(userLocation.lng) && (
             <CircleMarker
-              center={[userLocation.lat, userLocation.lng]}
+              center={[userLocation.lat as number, userLocation.lng as number]}
               radius={9}
               pathOptions={{ color: '#ffffff', weight: 2, fillColor: '#059669', fillOpacity: 1 }}
             >
@@ -92,7 +92,7 @@ export const ResourceMap: React.FC<ResourceMapProps> = ({ resources, userLocatio
                   {r.address && <p className="mt-0.5 text-xs text-muted">{r.address}</p>}
                   <button
                     onClick={() => onSelect(r)}
-                    className="mt-2 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-inverse hover:bg-primary-hover"
+                    className="mt-2 min-h-11 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-inverse hover:bg-primary-hover"
                   >
                     View details
                   </button>

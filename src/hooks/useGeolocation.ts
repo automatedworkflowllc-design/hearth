@@ -3,15 +3,16 @@ import { useState, useCallback } from 'react';
 export type GeoStatus = 'idle' | 'locating' | 'granted' | 'denied' | 'unavailable' | 'error';
 
 export interface UserLocation {
-  lat: number;
-  lng: number;
+  lat?: number;
+  lng?: number;
+  zipCode?: string;
   source: 'gps' | 'zip';
   label?: string; // e.g. the ZIP the user typed
 }
 
 /**
  * Opt-in geolocation. CRITICAL: this NEVER calls the browser location API on mount --
- * only when the user explicitly clicks (requestGps) or supplies a ZIP (setFromZip).
+ * only when the user explicitly clicks (requestGps) or supplies a ZIP.
  * That is the whole privacy posture for a crisis-audience app: nothing about the user's
  * whereabouts is requested or transmitted until they choose it, and the ZIP path stays
  * entirely on-device (see gainesvilleZips.ts).
@@ -48,7 +49,15 @@ export function useGeolocation() {
   }, []);
 
   const setFromZip = useCallback((coords: { lat: number; lng: number }, zip: string) => {
-    setLocation({ lat: coords.lat, lng: coords.lng, source: 'zip', label: zip });
+    setLocation({ lat: coords.lat, lng: coords.lng, zipCode: zip, source: 'zip', label: zip });
+    setStatus('granted');
+    setError(null);
+  }, []);
+
+  // A national provider can geocode a ZIP on the server. Keeping the ZIP rather than
+  // pretending we know a precise point is both more accurate and more privacy-preserving.
+  const setFromPostalCode = useCallback((zip: string) => {
+    setLocation({ zipCode: zip, source: 'zip', label: zip });
     setStatus('granted');
     setError(null);
   }, []);
@@ -59,5 +68,5 @@ export function useGeolocation() {
     setError(null);
   }, []);
 
-  return { location, status, error, requestGps, setFromZip, clear };
+  return { location, status, error, requestGps, setFromZip, setFromPostalCode, clear };
 }

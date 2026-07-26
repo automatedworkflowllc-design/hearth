@@ -1,51 +1,73 @@
 import React from 'react';
-import type { Resource } from '../types/index';
-import { MapPin, Phone, Clock, ExternalLink } from 'lucide-react';
+import type { ContactMethod, Resource } from '../types/index';
+import {
+  Clock,
+  ExternalLink,
+  Languages,
+  MapPin,
+  MessageSquareText,
+  Phone,
+  Accessibility,
+} from 'lucide-react';
+import { getPrimaryContact } from '../utils/contact';
+import { getReviewState } from '../services/dataQuality';
 
 interface ResourceCardProps {
   resource: Resource;
   onSelect: (resource: Resource) => void;
 }
 
-// Category colors are token-backed so they flip with the theme. They used to be hardcoded hexes
-// chosen against the WHITE card -- which a sweep caught: on the BLACK high-contrast card the plum
-// was 1.91:1, i.e. the label all but disappeared in the mode built for low vision. The tokens keep
-// the warm hues in the standard theme and go white in high-contrast (21:1); the category is always
-// ALSO conveyed as text, so color is never the sole signal either way.
 const categoryColors: Record<string, string> = {
-  food: 'text-cat-food',        // warm brown (not green: green is reserved for status)
-  shelter: 'text-cat-shelter',  // coral
-  health: 'text-cat-health',    // plum
+  food: 'text-cat-food',
+  shelter: 'text-cat-shelter',
+  health: 'text-cat-health',
   legal: 'text-cat-legal',
-  support: 'text-cat-support',  // dark sage
+  support: 'text-cat-support',
 };
 
-/** Distance shown at ZIP/city precision is an estimate, so present it as one. */
 function approxDistance(miles: number): string {
   if (miles < 1) return 'under 1 mi';
   return `~${Math.round(miles)} mi`;
 }
 
+function formatReviewDate(isoDate: string): string {
+  const parsed = new Date(`${isoDate}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return isoDate;
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(parsed);
+}
+
+function ContactIcon({ contact }: { contact: ContactMethod }) {
+  if (contact.type === 'phone') return <Phone className="h-3.5 w-3.5" aria-hidden="true" />;
+  if (contact.type === 'sms') return <MessageSquareText className="h-3.5 w-3.5" aria-hidden="true" />;
+  return <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />;
+}
+
 export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onSelect }) => {
   const categoryClass = categoryColors[resource.category.toLowerCase()] ?? 'text-main';
+  const primaryContact = getPrimaryContact(resource);
+  const reviewDate = resource.review?.reviewedAt ?? resource.lastVerified;
+  const reviewState = getReviewState(resource);
+  const externalContact =
+    primaryContact && ['website', 'chat', 'intake'].includes(primaryContact.type);
 
   const hoursDisplay = typeof resource.hours === 'string'
     ? resource.hours
-    : resource.hours.map(h => `${h.day}: ${h.closed ? 'Closed' : `${h.open}-${h.close}`}`).join(', ');
+    : resource.hours.map((hour) => `${hour.day}: ${hour.closed ? 'Closed' : `${hour.open}-${hour.close}`}`).join(', ');
 
   return (
-    <div className="bg-surface rounded-2xl shadow-sm hover:shadow-md border border-border p-5 transition-all duration-200 flex flex-col h-full">
+    <article className="flex h-full flex-col rounded-2xl border border-border bg-surface p-5 shadow-sm transition-all duration-200 hover:shadow-md">
       <span className={`font-display text-xs font-extrabold uppercase tracking-wider ${categoryClass}`}>
         {resource.category}
       </span>
 
-      <h3 className="mt-1.5 font-display text-lg font-bold text-main">
-        {resource.name}
-      </h3>
+      <h3 className="mt-1.5 font-display text-lg font-bold text-main">{resource.name}</h3>
 
-      <p className="mt-1.5 text-sm text-muted line-clamp-2">
-        {resource.description}
-      </p>
+      <p className="mt-1.5 line-clamp-2 text-sm text-muted">{resource.description}</p>
 
       <div className="mt-3 flex flex-wrap gap-1.5">
         {typeof resource.distanceMiles === 'number' && (
@@ -54,9 +76,18 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onSelect }
           </span>
         )}
         {resource.availability && (
-          // Static service descriptor (e.g. "By appointment"), not a live/open-now claim.
           <span className="rounded-full bg-card-hover px-2.5 py-1 text-xs font-bold text-main">
             {resource.availability}
+          </span>
+        )}
+        {resource.languages?.map((language) => (
+          <span key={language.code} className="inline-flex items-center gap-1 rounded-full bg-card-hover px-2.5 py-1 text-xs font-bold text-main">
+            <Languages className="h-3 w-3" aria-hidden="true" /> {language.label}
+          </span>
+        ))}
+        {resource.accessibility?.wheelchair === 'yes' && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-card-hover px-2.5 py-1 text-xs font-bold text-main">
+            <Accessibility className="h-3 w-3" aria-hidden="true" /> Wheelchair access documented
           </span>
         )}
       </div>
@@ -64,47 +95,41 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onSelect }
       <div className="mt-4 space-y-2 text-xs text-muted">
         {resource.address && (
           <div className="flex items-start gap-2">
-            <MapPin className="w-4 h-4 text-muted shrink-0 mt-0.5" aria-hidden="true" />
+            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
             <span>{resource.address}</span>
           </div>
         )}
-        <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-muted shrink-0" aria-hidden="true" />
+        <div className="flex items-start gap-2">
+          <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
           <span>{hoursDisplay}</span>
         </div>
-        {resource.lastVerified && (
-          <p className="text-xs text-muted">Verified {resource.lastVerified}</p>
+        {reviewDate && (
+          <p className={reviewState === 'current' ? 'text-muted' : 'font-semibold text-primary'}>
+            {reviewState === 'exception' || reviewState === 'needs-review' ? 'Needs confirmation · ' : 'Listing reviewed '}
+            <time dateTime={reviewDate}>{formatReviewDate(reviewDate)}</time>
+          </p>
         )}
       </div>
 
-      {/* Next step: one clear primary ("what to expect" reduces the fear of walking in cold),
-          with the phone as a real tel: link beside it -- never a bare number with no action. */}
-      <div className="mt-auto pt-4 flex items-center justify-between gap-2 border-t border-border">
+      <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-4">
         <button
           onClick={() => onSelect(resource)}
-          className="rounded-xl bg-primary px-3.5 py-2 font-display text-xs font-bold text-inverse transition-colors hover:bg-primary-hover"
+          className="min-h-11 rounded-xl bg-primary px-3.5 py-2 font-display text-xs font-bold text-inverse transition-colors hover:bg-primary-hover"
         >
           What to expect →
         </button>
-        {resource.phone ? (
+        {primaryContact && (
           <a
-            href={`tel:${resource.phone}`}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline"
+            href={primaryContact.href}
+            target={externalContact ? '_blank' : undefined}
+            rel={externalContact ? 'noopener noreferrer' : undefined}
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs font-bold text-primary hover:bg-card-hover hover:underline"
           >
-            <Phone className="w-3.5 h-3.5" aria-hidden="true" />
-            Call now
+            <ContactIcon contact={primaryContact} />
+            {primaryContact.label}
           </a>
-        ) : resource.website ? (
-          <a
-            href={resource.website}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
-          >
-            Website <ExternalLink className="w-3 h-3" aria-hidden="true" />
-          </a>
-        ) : null}
+        )}
       </div>
-    </div>
+    </article>
   );
 };

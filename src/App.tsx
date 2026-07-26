@@ -9,26 +9,51 @@ import { LocationControl } from './components/LocationControl';
 import { ResourceMap } from './components/ResourceMap';
 import { useGeolocation } from './hooks/useGeolocation';
 import { useAccessibility } from './hooks/useAccessibility';
-import { searchResources } from './services/resourceService';
 import { useResources } from './hooks/useResources';
-import { staticProvider } from './providers/resourceProvider';
+import { getConfiguredProvider } from './providers/resourceProvider';
 import type { Resource } from './types/index';
 import { AlertCircle, List as ListIcon, Map as MapIcon } from 'lucide-react';
 
 type ViewMode = 'list' | 'map';
+const RESULTS_HEADING_ID = 'resource-results';
+const RESOURCE_PROVIDER = getConfiguredProvider();
 
 export const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState<'relevance' | 'name' | 'distance'>('relevance');
+  const [selectedLanguage, setSelectedLanguage] = useState('all');
+  const [wheelchairOnly, setWheelchairOnly] = useState(false);
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [view, setView] = useState<ViewMode>('list');
 
-  const { location, status, error, requestGps, setFromZip, clear } = useGeolocation();
+  const { location, status, error, requestGps, setFromZip, setFromPostalCode, clear } = useGeolocation();
   const a11y = useAccessibility();
-  // Resources arrive through the ResourceProvider seam (demo = staticProvider; a live 211/HSDS feed
-  // would swap in here with no other change). Async by design so static + live share one code path.
-  const { resources, status: dataStatus, error: dataError } = useResources(staticProvider);
+  const resourceRequest = useMemo(() => ({
+    query: searchQuery,
+    category: selectedCategory,
+    userLocation: location ?? undefined,
+    sortBy,
+    language: selectedLanguage,
+    wheelchairAccessibleOnly: wheelchairOnly,
+    limit: 50,
+  }), [
+    searchQuery,
+    selectedCategory,
+    location,
+    sortBy,
+    selectedLanguage,
+    wheelchairOnly,
+  ]);
+  const {
+    resources,
+    total,
+    facets,
+    status: dataStatus,
+    error: dataError,
+    coverage,
+    providerLabel,
+  } = useResources(RESOURCE_PROVIDER, resourceRequest);
 
   // When the user sets a location, default the sort to distance (unless they've chosen
   // name); when they clear it, fall back off distance. Never overrides an explicit choice.
@@ -59,17 +84,22 @@ export const App: React.FC = () => {
     el.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
   }, []);
 
-  const filteredResources = useMemo(() => {
-    return searchResources(
-      searchQuery,
-      selectedCategory,
-      'all',
-      [],
-      location ?? undefined,
-      sortBy,
-      resources
-    );
-  }, [searchQuery, selectedCategory, sortBy, location, resources]);
+  const focusResults = useCallback(() => {
+    const heading = document.getElementById(RESULTS_HEADING_ID);
+    heading?.focus({ preventScroll: true });
+    heading?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+  }, []);
+
+  const showCategory = useCallback((category: string) => {
+    setSearchQuery('');
+    setSelectedCategory(category);
+    setView('list');
+    requestAnimationFrame(() => {
+      focusResults();
+    });
+  }, [focusResults]);
+
+  const filteredResources = resources;
 
   return (
     <Layout accessibility={a11y} onSearchClick={focusSearch}>
@@ -78,15 +108,26 @@ export const App: React.FC = () => {
         <SafetyBar />
 
         {/* Hero owns the page's single <h1> and the real search input. */}
-        <Hero searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+        <Hero
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onSearchSubmit={focusResults}
+          onCategorySelect={showCategory}
+        />
 
-        {/* Demo disclaimer -- honest about what this data is and points to a live human line. */}
-        <div role="alert" className="bg-card-hover border-l-4 border-accent text-main rounded-xl px-4 py-3 text-sm">
-          <strong>Demo directory.</strong> These are real, recently-verified Gainesville, FL resources shown as a
-          demonstration, not a guaranteed-current live directory. For real, current help right now, call{' '}
-          <a className="font-semibold underline" href="tel:211">211</a> (community services) or{' '}
-          <a className="font-semibold underline" href="tel:988">988</a> (crisis &amp; suicide lifeline).
-        </div>
+        {coverage === 'local-demo' ? (
+          <div role="alert" className="bg-card-hover border-l-4 border-accent text-main rounded-xl px-4 py-3 text-sm">
+            <strong>Local demonstration directory.</strong> These are real, recently-reviewed Gainesville, FL
+            resources shown while the national data connection is being completed. The interface is national-ready,
+            but this build must not imply coverage it does not yet have. For current help, call{' '}
+            <a className="font-semibold underline" href="tel:211">211</a> (community services) or{' '}
+            <a className="font-semibold underline" href="tel:988">988</a> (crisis &amp; suicide lifeline).
+          </div>
+        ) : (
+          <div role="status" className="bg-card-hover border-l-4 border-accent text-main rounded-xl px-4 py-3 text-sm">
+            Searching the <strong>{providerLabel}</strong>. Call to confirm time-sensitive details before traveling.
+          </div>
+        )}
 
         {/* Location control (opt-in geolocation / on-device ZIP) */}
         <LocationControl
@@ -95,6 +136,8 @@ export const App: React.FC = () => {
           error={error}
           onRequestGps={requestGps}
           onSetZip={setFromZip}
+          onSetPostalCode={setFromPostalCode}
+          nationalCoverage={coverage === 'national'}
           onClear={handleClearLocation}
         />
 
@@ -104,21 +147,32 @@ export const App: React.FC = () => {
           onCategoryChange={setSelectedCategory}
           sortBy={sortBy}
           onSortChange={setSortBy}
-          totalResultsCount={filteredResources.length}
+          totalResultsCount={total}
           distanceAvailable={!!location}
+          availableLanguages={facets.languages}
+          selectedLanguage={selectedLanguage}
+          onLanguageChange={setSelectedLanguage}
+          wheelchairFilterAvailable={facets.hasWheelchairData}
+          wheelchairOnly={wheelchairOnly}
+          onWheelchairOnlyChange={setWheelchairOnly}
+          resultsContext={coverage === 'national' ? 'from the national directory' : 'in the Gainesville, FL area'}
         />
 
         {/* Results heading -- also keeps the document outline sequential (h1 hero -> h2 here ->
             h3 per card); without it the card headings jumped straight from h1 to h3. */}
         <div className="flex items-center justify-between gap-4 flex-wrap">
-          <h2 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-main">
+          <h2
+            id={RESULTS_HEADING_ID}
+            tabIndex={-1}
+            className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-main focus:outline-none"
+          >
             Help near you
           </h2>
           <div className="inline-flex rounded-xl border border-border bg-surface p-1" role="group" aria-label="View mode">
             <button
               onClick={() => setView('list')}
               aria-pressed={view === 'list'}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-display text-xs font-bold transition ${
+              className={`inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-1.5 font-display text-xs font-bold transition ${
                 view === 'list' ? 'bg-primary text-inverse' : 'text-muted hover:bg-card-hover'
               }`}
             >
@@ -127,7 +181,7 @@ export const App: React.FC = () => {
             <button
               onClick={() => setView('map')}
               aria-pressed={view === 'map'}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-display text-xs font-bold transition ${
+              className={`inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-1.5 font-display text-xs font-bold transition ${
                 view === 'map' ? 'bg-primary text-inverse' : 'text-muted hover:bg-card-hover'
               }`}
             >
@@ -162,7 +216,7 @@ export const App: React.FC = () => {
                 setSearchQuery('');
                 setSelectedCategory('all');
               }}
-              className="px-4 py-2.5 bg-primary text-inverse font-display font-bold text-xs rounded-xl hover:bg-primary-hover transition-colors"
+              className="min-h-11 px-4 py-2.5 bg-primary text-inverse font-display font-bold text-xs rounded-xl hover:bg-primary-hover transition-colors"
             >
               Reset filters
             </button>
@@ -185,7 +239,7 @@ export const App: React.FC = () => {
           </p>
           <p className="mt-3 text-sm text-muted max-w-2xl">
             Always free to search · no account · no tracking. Each listing shows when it was last
-            verified against the organization's own source.
+            reviewed.
           </p>
         </section>
 

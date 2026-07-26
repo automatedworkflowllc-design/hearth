@@ -1,6 +1,22 @@
 import React, { useEffect, useId, useRef } from 'react';
-import type { Resource } from '../types/index';
-import { X, MapPin, Phone, Mail, Globe, Clock, CheckCircle2 } from 'lucide-react';
+import type { ContactMethod, Resource } from '../types/index';
+import {
+  Accessibility,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  ExternalLink,
+  FileText,
+  Globe,
+  Languages,
+  Mail,
+  MapPin,
+  MessageSquareText,
+  Phone,
+  X,
+} from 'lucide-react';
+import { getResourceContacts } from '../utils/contact';
+import { getReviewState } from '../services/dataQuality';
 
 interface ResourceDetailModalProps {
   resource: Resource | null;
@@ -9,41 +25,75 @@ interface ResourceDetailModalProps {
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), textarea, input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const REPORT_EMAIL =
+  import.meta.env.VITE_RESOURCE_REPORT_EMAIL?.trim() || 'automaticworkflowllc@gmail.com';
+
+function formatDate(isoDate: string): string {
+  const date = new Date(`${isoDate}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return isoDate;
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(date);
+}
+
+function reportHref(resource: Resource): string {
+  const subject = `Hearth listing update: ${resource.name}`;
+  const body = [
+    `Listing: ${resource.name}`,
+    `Listing ID: ${resource.id}`,
+    '',
+    'What information appears outdated?',
+    '',
+    'What is the correct information?',
+    '',
+    'Source URL or public phone number used to confirm the correction:',
+    '',
+    'Please do not include private, medical, or other sensitive personal information.',
+  ].join('\n');
+  return `mailto:${REPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+function ContactIcon({ contact }: { contact: ContactMethod }) {
+  if (contact.type === 'phone') return <Phone className="h-4 w-4 shrink-0" aria-hidden="true" />;
+  if (contact.type === 'sms') return <MessageSquareText className="h-4 w-4 shrink-0" aria-hidden="true" />;
+  if (contact.type === 'email') return <Mail className="h-4 w-4 shrink-0" aria-hidden="true" />;
+  if (contact.type === 'intake') return <FileText className="h-4 w-4 shrink-0" aria-hidden="true" />;
+  return <Globe className="h-4 w-4 shrink-0" aria-hidden="true" />;
+}
 
 export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resource, onClose }) => {
   const panelRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
   const titleId = useId();
 
-  // Accessible dialog behavior. Hooks run unconditionally (before the early return) so
-  // React's hook order is stable whether or not a resource is open.
   useEffect(() => {
     if (!resource) return;
     previouslyFocused.current = document.activeElement as HTMLElement | null;
     const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden'; // scroll-lock the page behind the dialog
+    document.body.style.overflow = 'hidden';
 
-    // Move focus onto the first real focusable inside the dialog (not the tabIndex=-1 panel):
-    // focusing the panel let Shift+Tab escape the trap, since the panel is not in the cycle.
     const initial = panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE);
     (initial && initial.length ? initial[0] : panelRef.current)?.focus();
 
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
         onClose();
         return;
       }
-      if (e.key === 'Tab' && panelRef.current) {
+      if (event.key === 'Tab' && panelRef.current) {
         const nodes = panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE);
         if (nodes.length === 0) return;
         const first = nodes[0];
         const last = nodes[nodes.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
           last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
           first.focus();
         }
       }
@@ -53,7 +103,7 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resour
     return () => {
       document.removeEventListener('keydown', onKeyDown);
       document.body.style.overflow = prevOverflow;
-      previouslyFocused.current?.focus?.(); // return focus to whatever opened the dialog
+      previouslyFocused.current?.focus?.();
     };
   }, [resource, onClose]);
 
@@ -62,13 +112,16 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resour
   const hoursDisplay =
     typeof resource.hours === 'string'
       ? resource.hours
-      : resource.hours.map((h) => `${h.day}: ${h.closed ? 'Closed' : `${h.open}-${h.close}`}`).join('\n');
+      : resource.hours.map((hour) => `${hour.day}: ${hour.closed ? 'Closed' : `${hour.open}-${hour.close}`}`).join('\n');
+  const contacts = getResourceContacts(resource);
+  const reviewDate = resource.review?.reviewedAt ?? resource.lastVerified;
+  const reviewState = getReviewState(resource);
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose(); // click on the backdrop closes
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
       }}
     >
       <div
@@ -77,117 +130,175 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resour
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="bg-surface rounded-2xl shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto border border-border p-6 relative focus:outline-none"
+        className="relative max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-border bg-surface p-6 shadow-xl focus:outline-none"
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-muted hover:text-muted p-1.5 rounded-full hover:bg-card-hover transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
+          className="absolute right-4 top-4 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full p-2 text-muted transition-colors hover:bg-card-hover hover:text-main"
           aria-label="Close"
         >
-          <X className="w-5 h-5" />
+          <X className="h-5 w-5" aria-hidden="true" />
         </button>
 
-        {/* Header Badges */}
-        <div className="flex items-center gap-2 mb-3">
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-card-hover text-main border border-border">
+        <div className="mb-3 flex flex-wrap items-center gap-2 pr-10">
+          <span className="inline-flex rounded-full border border-border bg-card-hover px-3 py-1 text-xs font-semibold uppercase tracking-wider text-main">
             {resource.category}
           </span>
           {resource.availability && (
-            <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 bg-card-hover text-main rounded-full">
+            <span className="inline-flex rounded-full bg-card-hover px-2.5 py-1 text-xs font-medium text-main">
               {resource.availability}
             </span>
           )}
         </div>
 
-        {/* Title */}
-        <h2 id={titleId} className="font-display text-2xl font-extrabold text-main mb-3">
+        <h2 id={titleId} className="mb-3 font-display text-2xl font-extrabold text-main">
           {resource.name}
         </h2>
 
-        {/* Description */}
-        <p className="text-sm text-main leading-relaxed mb-6 bg-app p-4 rounded-xl border border-border">
+        <p className="mb-6 rounded-xl border border-border bg-app p-4 text-sm leading-relaxed text-main">
           {resource.description}
         </p>
 
-        {/* Info Grid */}
-        <div className="space-y-4 text-sm text-main mb-6">
+        <div className="mb-6 space-y-4 text-sm text-main">
           {resource.address && (
             <div className="flex items-start gap-3">
-              <MapPin className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+              <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
               <div>
-                <strong className="block text-main font-semibold">Address</strong>
+                <strong className="block font-semibold text-main">Address</strong>
                 <span>{resource.address}</span>
               </div>
             </div>
           )}
 
           <div className="flex items-start gap-3">
-            <Clock className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+            <Clock className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
             <div>
-              <strong className="block text-main font-semibold">Hours of Operation</strong>
-              <pre className="font-sans whitespace-pre-wrap text-muted text-xs mt-0.5">{hoursDisplay}</pre>
+              <strong className="block font-semibold text-main">Hours</strong>
+              <pre className="mt-0.5 whitespace-pre-wrap font-sans text-xs text-muted">{hoursDisplay}</pre>
+              <span className="mt-1 block text-xs text-muted">Call before traveling when availability is time-sensitive.</span>
             </div>
           </div>
 
           {resource.eligibility && (
             <div className="flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-[#35684a] shrink-0 mt-0.5" aria-hidden="true" />
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#35684a]" aria-hidden="true" />
               <div>
-                <strong className="block text-main font-semibold">Eligibility</strong>
+                <strong className="block font-semibold text-main">Eligibility</strong>
                 <span className="text-muted">{resource.eligibility}</span>
               </div>
             </div>
           )}
 
-          {resource.lastVerified && (
-            <p className="text-xs text-muted">Details last verified {resource.lastVerified}.</p>
+          {resource.languages?.length ? (
+            <div className="flex items-start gap-3">
+              <Languages className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+              <div>
+                <strong className="block font-semibold text-main">Documented language access</strong>
+                <span className="text-muted">
+                  {resource.languages.map((language) => `${language.label} (${language.access})`).join(', ')}
+                </span>
+              </div>
+            </div>
+          ) : null}
+
+          {resource.accessibility && (
+            <div className="flex items-start gap-3">
+              <Accessibility className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+              <div>
+                <strong className="block font-semibold text-main">Documented accessibility</strong>
+                <span className="text-muted">
+                  Wheelchair access: {resource.accessibility.wheelchair}
+                  {resource.accessibility.notes?.length ? ` · ${resource.accessibility.notes.join(' · ')}` : ''}
+                </span>
+              </div>
+            </div>
           )}
 
-          {/* Contact Section */}
-          <div className="pt-4 border-t border-border grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {resource.phone && (
-              <a
-                href={`tel:${resource.phone}`}
-                className="flex items-center gap-2 p-3 bg-surface border border-border text-primary rounded-xl font-medium hover:bg-card-hover transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <Phone className="w-4 h-4 shrink-0" aria-hidden="true" />
-                <span>{resource.phone}</span>
-              </a>
-            )}
-            {resource.email && (
-              <a
-                href={`mailto:${resource.email}`}
-                className="flex items-center gap-2 p-3 bg-app text-main rounded-xl font-medium hover:bg-card-hover transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <Mail className="w-4 h-4 shrink-0" aria-hidden="true" />
-                <span className="truncate">{resource.email}</span>
-              </a>
-            )}
-          </div>
-
-          {resource.website && (
-            <a
-              href={resource.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full p-3 bg-primary text-inverse rounded-xl font-semibold hover:bg-primary-hover transition-colors mt-2 focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <Globe className="w-4 h-4" aria-hidden="true" />
-              Visit Official Website
-            </a>
+          {contacts.length > 0 && (
+            <div className="grid grid-cols-1 gap-2 border-t border-border pt-4 sm:grid-cols-2">
+              {contacts.map((contact) => {
+                const external = ['website', 'chat', 'intake'].includes(contact.type);
+                return (
+                  <a
+                    key={`${contact.type}-${contact.href}`}
+                    href={contact.href}
+                    target={external ? '_blank' : undefined}
+                    rel={external ? 'noopener noreferrer' : undefined}
+                    className={`flex min-h-12 items-center gap-2 rounded-xl border px-3 py-2.5 font-semibold transition-colors ${
+                      contact.primary
+                        ? 'border-primary bg-primary text-inverse hover:bg-primary-hover'
+                        : 'border-border-input bg-surface text-main hover:bg-card-hover'
+                    }`}
+                  >
+                    <ContactIcon contact={contact} />
+                    <span className="min-w-0">
+                      <span className="block text-xs">{contact.label}</span>
+                      <span className="block truncate text-xs font-normal">{contact.value}</span>
+                    </span>
+                    {external && <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0" aria-hidden="true" />}
+                  </a>
+                );
+              })}
+            </div>
           )}
         </div>
 
-        {/* Tags */}
-        {resource.tags && resource.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 pt-4 border-t border-border">
-            {resource.tags.map((tag) => (
-              <span key={tag} className="text-xs bg-card-hover text-main px-2.5 py-1 rounded-md font-medium">
-                #{tag}
-              </span>
-            ))}
-          </div>
+        {resource.review && (
+          <section
+            className={`rounded-xl border p-4 ${
+              reviewState === 'current' ? 'border-border bg-app' : 'border-primary bg-card-hover'
+            }`}
+            aria-labelledby={`${titleId}-review`}
+          >
+            <div className="flex items-start gap-2">
+              {reviewState === 'current' ? (
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+              ) : (
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+              )}
+              <div>
+                <h3 id={`${titleId}-review`} className="font-display text-sm font-bold text-main">
+                  {reviewState === 'current' ? 'Listing review record' : 'Confirmation needed'}
+                </h3>
+                {reviewDate && (
+                  <p className="mt-1 text-xs text-muted">
+                    Reviewed <time dateTime={reviewDate}>{formatDate(reviewDate)}</time>
+                    {' · '}next review due <time dateTime={resource.review.reviewDueAt}>{formatDate(resource.review.reviewDueAt)}</time>
+                  </p>
+                )}
+                {resource.review.note && <p className="mt-2 text-xs text-main">{resource.review.note}</p>}
+                {resource.review.sources.length > 0 && (
+                  <ul className="mt-2 space-y-1">
+                    {resource.review.sources.map((source) => (
+                      <li key={source.url}>
+                        <a
+                          href={source.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-primary underline"
+                        >
+                          {source.name} <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </section>
         )}
+
+        <div className="mt-4 border-t border-border pt-4">
+          <a
+            href={reportHref(resource)}
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-primary hover:bg-card-hover hover:underline"
+          >
+            <Mail className="h-4 w-4" aria-hidden="true" /> Report outdated information
+          </a>
+          <p className="mt-1 text-xs text-muted">
+            Opens your email app with the listing details. Do not include private or sensitive personal information.
+          </p>
+        </div>
       </div>
     </div>
   );

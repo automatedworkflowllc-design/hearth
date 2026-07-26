@@ -1,46 +1,60 @@
 import { useEffect, useState } from 'react';
-import type { Resource } from '../types/index';
+import type {
+  DirectoryFacets,
+  Resource,
+  ResourceSearchRequest,
+} from '../types/index';
 import type { ResourceProvider } from '../providers/resourceProvider';
 
 export type ResourceLoadStatus = 'loading' | 'ready' | 'error';
 
+const EMPTY_FACETS: DirectoryFacets = { languages: [], hasWheelchairData: false };
+
 /**
- * Loads resources from a ResourceProvider once on mount. This is the async boundary that lets the
- * static demo dataset and a future live feed share one code path: the rest of the app only ever sees
- * `resources` (a Resource[]) plus a status, exactly as it would with a real network source. Swapping
- * the provider (static -> live 211/HSDS) requires no change here or downstream.
- *
- * The provider must be a STABLE reference (a module-level singleton like `staticProvider`, or one
- * held in state/useMemo). Re-loading is keyed on provider identity, so passing a freshly-built
- * object literal on every render would re-trigger the load forever.
+ * Runs a bounded query against either the bundled demo or a server-backed national provider.
+ * In-flight requests are aborted when the query changes, preventing stale results from winning.
  */
-export function useResources(provider: ResourceProvider) {
+export function useResources(provider: ResourceProvider, request: ResourceSearchRequest) {
   const [resources, setResources] = useState<Resource[]>([]);
+  const [total, setTotal] = useState(0);
+  const [facets, setFacets] = useState<DirectoryFacets>(EMPTY_FACETS);
   const [status, setStatus] = useState<ResourceLoadStatus>('loading');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
     let cancelled = false;
     setStatus('loading');
     setError(null);
+
     provider
-      .load()
-      .then((data) => {
+      .search({ ...request, signal: controller.signal })
+      .then((result) => {
         if (cancelled) return;
-        setResources(data);
+        setResources(result.resources);
+        setTotal(result.total);
+        setFacets(result.facets);
         setStatus('ready');
       })
-      .catch((e) => {
-        if (cancelled) return;
-        // A live provider can fail (offline, endpoint down). Surface it honestly so the UI can
-        // fall back to 211 rather than showing a silent empty list.
-        setError(e instanceof Error ? e.message : 'Could not load the resource directory.');
+      .catch((errorValue) => {
+        if (cancelled || controller.signal.aborted) return;
+        setError(errorValue instanceof Error ? errorValue.message : 'Could not search the resource directory.');
         setStatus('error');
       });
+
     return () => {
       cancelled = true;
+      controller.abort();
     };
-  }, [provider]);
+  }, [provider, request]);
 
-  return { resources, status, error };
+  return {
+    resources,
+    total,
+    facets,
+    status,
+    error,
+    providerLabel: provider.label,
+    coverage: provider.coverage,
+  };
 }

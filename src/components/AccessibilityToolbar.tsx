@@ -12,7 +12,7 @@ const SIZES: { id: TextSize; label: string; a11y: string }[] = [
 // legible in high-contrast: once the nav turns black, a bg-surface active button would be
 // black-on-black. bg-on-nav (white in both themes) + text-nav keeps contrast either way.
 const btn = (active: boolean) =>
-  `min-w-[2rem] rounded-md px-2 py-1.5 text-xs font-bold transition focus:outline-none focus:ring-2 focus:ring-white ${
+  `min-h-11 min-w-11 rounded-md px-2 py-1.5 text-xs font-bold transition focus:outline-none focus:ring-2 focus:ring-white ${
     active ? 'bg-on-nav text-nav' : 'bg-nav-hover text-on-nav hover:bg-on-nav hover:text-nav'
   }`;
 
@@ -36,7 +36,7 @@ export const AccessibilityToolbar: React.FC<AccessibilityState> = ({
 }) => {
   const highContrast = contrastMode === 'high-contrast';
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center justify-between gap-2 sm:justify-start sm:gap-3">
       <button
         type="button"
         onClick={toggleContrast}
