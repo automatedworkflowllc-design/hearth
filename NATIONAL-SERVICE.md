@@ -34,14 +34,17 @@ The first directory-service implementation now lives in `worker/`:
 - the USDA adapter resolves the current official SUN Meals Site Finder layer, rejects unsafe or
   malformed records, merges exact duplicate schedules, and imports 49,298 clean 2026 seasonal
   sites; 29,169 were operating on 2026-07-26;
+- the EPA adapter imports 6,134 direct food pantries and soup kitchens from EPA's republished
+  2024 Hunger Free America layer, excluding food banks, invalid locations, and records without a
+  usable website;
 - the Census adapter imports 33,791 official 2025 ZCTA centroids for no-cost nearby ZIP search;
 - every imported result retains government provenance and is labeled as not independently
   confirmed by Hearth.
 
-The complete no-cost setup and deployment procedure is in `FREE-NATIONAL-BACKEND.md`. The
+The complete low-cost setup and deployment procedure is in `FREE-NATIONAL-BACKEND.md`. The
 production service is deployed at
-<https://hearth-directory.automaticworkflowllc.workers.dev>; the public frontend identifies it as
-a national health-center pilot rather than implying complete multi-category coverage.
+<https://hearth-directory.automaticworkflowllc.workers.dev>; the public frontend names its
+implemented categories and directs unsupported needs to 211.
 
 ## Recommended national source stack
 
@@ -68,14 +71,23 @@ index with source-specific adapters and transparent provenance.
    facility-reported snapshot and verify details before travel.
    - <https://www.samhsa.gov/data/data-we-collect/n-sumhss-national-substance-use-and-mental-health-services-survey/national-directories>
    - <https://www.samhsa.gov/data/data-we-collect/n-sumhss-national-substance-use-and-mental-health-services-survey/datafiles/2024>
-4. **USDA SUN Meals Site Finder — implemented seasonal food layer.** USDA’s official finder
+4. **EPA / Hunger Free America — implemented year-round food-assistance layer.** EPA Version 3.1
+   republishes a 2024 Hunger Free America snapshot of food banks, food pantries, and soup kitchens.
+   Hearth imports only direct pantries and kitchens with a complete mapped location and a usable
+   website; it excludes food banks because a regional warehouse or referral hub is not necessarily
+   a walk-in food source. The layer has no hours, phone, or eligibility fields, and EPA explicitly
+   does not guarantee accuracy or completeness, so every listing is an exception and points people
+   to the site or USDA National Hunger Hotline before travel.
+   - <https://www.epa.gov/sustainable-management-food/excess-food-opportunities-map>
+   - <https://www.fns.usda.gov/national-hunger-hotline>
+5. **USDA SUN Meals Site Finder — implemented seasonal food layer.** USDA’s official finder
    includes state-submitted open and restricted-open summer meal sites for children age 18 and
    under. Hearth imports supported SFSP/SSO sites with valid locations, dates, and meal times,
    discloses pickup and attendance restrictions, and shows a record only during its published
    operating window. This is not adult food assistance or year-round food coverage.
    - <https://www.fns.usda.gov/summer/sitefinder>
    - <https://www.fns.usda.gov/sfsp/participant>
-5. **Legal Services Corporation — legal-aid seed and reconciliation source.** LSC reports
+6. **Legal Services Corporation — legal-aid seed and reconciliation source.** LSC reports
    129 funded organizations and more than 800 offices nationwide. Ingest office data only from
    a permitted structured source or an explicit partner export; do not scrape a consumer site
    in production.
@@ -88,7 +100,8 @@ complete national coverage for a category.
 
 `GET /v1/resources/search` accepts:
 
-- `q`, `category`, or `need` (`food`, `medical-care`, `mental-health`, `substance-use`, `detox`)
+- `q`, `category`, or `need` (`food`, `food-assistance`, `summer-meals`, `medical-care`,
+  `mental-health`, `substance-use`, `detox`)
 - either `zip` or `lat` + `lng`
 - `sort` (`relevance`, `name`, `distance`)
 - `language`, `wheelchair`
@@ -129,10 +142,10 @@ choose the displayed value through a documented source-precedence rule, and crea
 
 ## Production sequence
 
-1. Authenticate Wrangler to the project's free Cloudflare account and deploy the implemented
+1. Authenticate Wrangler to the project's Cloudflare account and deploy the implemented
    Worker/D1 service.
-2. Load the implemented Census, HRSA, SAMHSA, and USDA SUN Meals adapters, then connect the public
-   frontend.
+2. Load the implemented Census, HRSA, SAMHSA, EPA food-assistance, and USDA SUN Meals adapters,
+   then connect the public frontend.
 3. Obtain permission and credentials for the 211 National Data Platform and add it as the broader
    community-services source.
 4. Add a permitted LSC supplement and implement the review workflow in `DATA-OPERATIONS.md`.

@@ -31,7 +31,8 @@ const quickNeeds = [
 ];
 
 const nationalQuickNeeds = [
-  { category: 'food', label: 'Free summer meals', icon: Utensils },
+  { category: 'food-assistance', label: 'Food today', icon: Utensils },
+  { category: 'summer-meals', label: "Kids' summer meals", icon: Utensils },
   { category: 'medical-care', label: 'Medical care', icon: HeartPulse },
   { category: 'mental-health', label: 'Mental health', icon: Brain },
   { category: 'substance-use', label: 'Substance-use help', icon: Pill },
@@ -72,7 +73,7 @@ export const Hero: React.FC<HeroProps> = ({
 
           <p className="mt-4 max-w-xl text-base text-muted sm:text-lg">
             {nationalDirectory
-              ? 'Find free summer meals for kids, medical care, mental-health support, substance-use treatment, and detox services from national directories.'
+              ? 'Find food pantries, community meals, free summer meals for kids, medical care, mental-health support, substance-use treatment, and detox services from national directories.'
               : 'Find food, a safe place to stay, health care, and legal help from real, recently-reviewed organizations near you.'}{' '}
             <span className="font-serif italic text-brand">You belong here.</span>
           </p>
@@ -94,7 +95,7 @@ export const Hero: React.FC<HeroProps> = ({
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder={
                   nationalDirectory
-                    ? 'Try therapy, dental care, detox…'
+                    ? 'Try food pantry, therapy, dental care, detox…'
                     : 'What do you need? (food, a bed tonight…)'
                 }
                 aria-label="Search resources"

@@ -111,6 +111,23 @@ describe('national directory worker', () => {
     expect(food.sql).toContain('category = ?');
     expect(food.bindings).toContain('food');
 
+    const foodAssistance = buildResourceQuery({
+      need: 'food-assistance',
+      sort: 'relevance',
+      limit: 20,
+      offset: 0,
+    });
+    expect(foodAssistance.sql).toContain('source_name = ?');
+    expect(foodAssistance.bindings).toContain('EPA / Hunger Free America');
+
+    const summerMeals = buildResourceQuery({
+      need: 'summer-meals',
+      sort: 'relevance',
+      limit: 20,
+      offset: 0,
+    });
+    expect(summerMeals.bindings).toContain('USDA SUN Meals');
+
     const substanceUse = buildResourceQuery({
       need: 'substance-use',
       sort: 'relevance',

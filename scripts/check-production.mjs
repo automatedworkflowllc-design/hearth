@@ -67,6 +67,12 @@ async function checkHealth() {
     health.data?.sources?.SAMHSA >= 15_000,
     `SAMHSA resource count is unexpectedly low: ${health.data?.sources?.SAMHSA ?? 'missing'}.`,
   );
+  ensure(
+    health.data?.sources?.['EPA / Hunger Free America'] >= 4_000,
+    `EPA / Hunger Free America resource count is unexpectedly low: ${
+      health.data?.sources?.['EPA / Hunger Free America'] ?? 'missing'
+    }.`,
+  );
   if (summerMealsExpected) {
     ensure(
       health.data?.sources?.['USDA SUN Meals'] >= 1_000,
@@ -123,10 +129,18 @@ async function checkBehavioralHealthSearch() {
 
 async function checkNeedFilters() {
   const cases = [
+    {
+      need: 'food-assistance',
+      matches: (resource) =>
+        resource.category === 'food' &&
+        resource.review?.sources?.some(
+          (source) => source.name === 'EPA / Hunger Free America',
+        ),
+    },
     ...(summerMealsExpected
       ? [
           {
-            need: 'food',
+            need: 'summer-meals',
             matches: (resource) =>
               resource.category === 'food' &&
               resource.review?.sources?.some((source) => source.name === 'USDA SUN Meals'),

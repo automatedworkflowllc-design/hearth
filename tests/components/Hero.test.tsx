@@ -25,7 +25,8 @@ describe('Hero need shortcuts', () => {
     expect(screen.getByRole('button', { name: /mental health/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /substance-use help/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /detox support/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /free summer meals/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /food today/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /kids' summer meals/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /warm bed, housing, or legal help/i })).toHaveAttribute(
       'href',
       'tel:211'
@@ -37,8 +38,11 @@ describe('Hero need shortcuts', () => {
     fireEvent.click(screen.getByRole('button', { name: /mental health/i }));
     expect(onCategorySelect).toHaveBeenCalledWith('mental-health');
 
-    fireEvent.click(screen.getByRole('button', { name: /free summer meals/i }));
-    expect(onCategorySelect).toHaveBeenCalledWith('food');
+    fireEvent.click(screen.getByRole('button', { name: /food today/i }));
+    expect(onCategorySelect).toHaveBeenCalledWith('food-assistance');
+
+    fireEvent.click(screen.getByRole('button', { name: /kids' summer meals/i }));
+    expect(onCategorySelect).toHaveBeenCalledWith('summer-meals');
   });
 
   it('preserves the reviewed local-demo shortcuts', () => {

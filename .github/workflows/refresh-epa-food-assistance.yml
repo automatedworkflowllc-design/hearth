@@ -1,0 +1,91 @@
+name: Refresh EPA food assistance
+
+on:
+  schedule:
+    # EPA's republished layer changes infrequently. A monthly refresh keeps
+    # Hearth synchronized without needless D1 writes.
+    - cron: '23 11 8 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: refresh-national-directory
+  cancel-in-progress: false
+
+jobs:
+  refresh-epa-food-assistance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Require scoped Cloudflare credentials
+        shell: bash
+        run: |
+          if [[ -z "$CLOUDFLARE_API_TOKEN" || -z "$CLOUDFLARE_ACCOUNT_ID" ]]; then
+            echo "::error::Add CLOUDFLARE_API_TOKEN as a repository secret and CLOUDFLARE_ACCOUNT_ID as a repository variable."
+            exit 1
+          fi
+
+      - run: npm ci
+
+      - name: Normalize and validate the official EPA layer
+        shell: bash
+        run: |
+          npm run --silent directory:ingest:epa-food -- \
+            --output="$RUNNER_TEMP/epa-food-assistance.sql" \
+            > "$RUNNER_TEMP/epa-food-assistance-summary.json"
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const summary = JSON.parse(
+            fs.readFileSync(process.env.RUNNER_TEMP + '/epa-food-assistance-summary.json', 'utf8')
+          );
+          if (summary.totalPublished < 7_000 || summary.totalPublished > 12_000) {
+            throw new Error(`EPA safety gate failed: ${summary.totalPublished} published rows.`);
+          }
+          if (summary.directServiceCandidates < 6_000 || summary.directServiceCandidates > 10_000) {
+            throw new Error(
+              `EPA safety gate failed: ${summary.directServiceCandidates} direct-service candidates.`
+            );
+          }
+          if (summary.imported < 4_000 || summary.imported > 8_000) {
+            throw new Error(`EPA safety gate failed: ${summary.imported} normalized locations.`);
+          }
+          if (summary.stateCount < 45) {
+            throw new Error(
+              `EPA safety gate failed: only ${summary.stateCount} state/territory codes.`
+            );
+          }
+          if (summary.typeCounts['Food Pantry'] < 3_500) {
+            throw new Error('EPA safety gate failed: pantry coverage collapsed.');
+          }
+          if (summary.typeCounts['Soup Kitchen'] < 500) {
+            throw new Error('EPA safety gate failed: soup-kitchen coverage collapsed.');
+          }
+          console.log(JSON.stringify(summary, null, 2));
+          NODE
+
+      - name: Apply database migrations
+        run: >
+          npx wrangler d1 migrations apply hearth-directory
+          --remote
+          --config worker/wrangler.jsonc
+
+      - name: Apply the validated refresh to production D1
+        run: >
+          npx wrangler d1 execute hearth-directory
+          --remote
+          --config worker/wrangler.jsonc
+          --file "$RUNNER_TEMP/epa-food-assistance.sql"
+
+      - name: Verify production health and search
+        run: npm run check:production

@@ -31,6 +31,7 @@ The UI exposes these states instead of applying a generic “verified” badge.
 |---|---:|
 | Crisis, shelter intake, domestic-violence, seasonal service | 30 days |
 | USDA summer meal site feed during May–October | Weekly |
+| EPA/Hunger Free America pantry and kitchen snapshot | Monthly import; 90-day review |
 | Phone, SMS, intake URL, walk-in address, eligibility | 90 days |
 | Standard service description and hours | 180 days |
 | Stable organization identity | 365 days |

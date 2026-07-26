@@ -91,7 +91,15 @@ export interface DirectoryFacets {
 export interface ResourceSearchRequest {
   query?: string;
   category?: string;
-  need?: 'all' | 'food' | 'medical-care' | 'mental-health' | 'substance-use' | 'detox';
+  need?:
+    | 'all'
+    | 'food'
+    | 'food-assistance'
+    | 'summer-meals'
+    | 'medical-care'
+    | 'mental-health'
+    | 'substance-use'
+    | 'detox';
   city?: string;
   tags?: string[];
   userLocation?: Location;

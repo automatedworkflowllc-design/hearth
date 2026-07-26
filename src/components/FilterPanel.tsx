@@ -27,6 +27,8 @@ const categories = [
   { id: 'substance-use', label: 'Substance-use help' },
   { id: 'detox', label: 'Detox' },
   { id: 'food', label: 'Food & meals' },
+  { id: 'food-assistance', label: 'Food pantries & kitchens' },
+  { id: 'summer-meals', label: "Kids' summer meals" },
   { id: 'shelter', label: 'Shelter & housing' },
   { id: 'health', label: 'Medical & health' },
   { id: 'legal', label: 'Legal aid' },

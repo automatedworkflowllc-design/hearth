@@ -23,7 +23,14 @@ export const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedNeed, setSelectedNeed] = useState<
-    'all' | 'food' | 'medical-care' | 'mental-health' | 'substance-use' | 'detox'
+    | 'all'
+    | 'food'
+    | 'food-assistance'
+    | 'summer-meals'
+    | 'medical-care'
+    | 'mental-health'
+    | 'substance-use'
+    | 'detox'
   >('all');
   const [sortBy, setSortBy] = useState<'relevance' | 'name' | 'distance'>('relevance');
   const [selectedLanguage, setSelectedLanguage] = useState('all');
@@ -123,7 +130,15 @@ export const App: React.FC = () => {
     setSearchQuery('');
     if (IS_NATIONAL_DIRECTORY) {
       setSelectedNeed(
-        category as 'all' | 'food' | 'medical-care' | 'mental-health' | 'substance-use' | 'detox'
+        category as
+          | 'all'
+          | 'food'
+          | 'food-assistance'
+          | 'summer-meals'
+          | 'medical-care'
+          | 'mental-health'
+          | 'substance-use'
+          | 'detox'
       );
     } else {
       setSelectedCategory(category);
@@ -161,8 +176,9 @@ export const App: React.FC = () => {
           </div>
         ) : (
           <div role="status" className="bg-card-hover border-l-4 border-accent text-main rounded-xl px-4 py-3 text-sm">
-            Searching <strong>{providerLabel}</strong> across free summer meals for kids, medical
-            care, and behavioral-health services. Use the need filters for cleaner results. For
+            Searching <strong>{providerLabel}</strong> across food pantries, community meals,
+            free summer meals for kids, medical care, and behavioral-health services. Use the
+            need filters for cleaner results. For
             shelter, housing, legal help, or another category not yet covered nationally, dial{' '}
             <a className="font-semibold underline" href="tel:211">211</a>.
           </div>
@@ -190,6 +206,8 @@ export const App: React.FC = () => {
                     need as
                       | 'all'
                       | 'food'
+                      | 'food-assistance'
+                      | 'summer-meals'
                       | 'medical-care'
                       | 'mental-health'
                       | 'substance-use'
@@ -214,7 +232,15 @@ export const App: React.FC = () => {
           }
           availableCategoryIds={
             coverage === 'national'
-              ? ['all', 'food', 'medical-care', 'mental-health', 'substance-use', 'detox']
+              ? [
+                  'all',
+                  'food-assistance',
+                  'summer-meals',
+                  'medical-care',
+                  'mental-health',
+                  'substance-use',
+                  'detox',
+                ]
               : ['all', 'food', 'shelter', 'health', 'legal', 'support']
           }
         />

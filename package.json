@@ -15,6 +15,7 @@
     "directory:migrate:local": "wrangler d1 migrations apply hearth-directory --local --config worker/wrangler.jsonc",
     "directory:ingest:hrsa": "node scripts/import-hrsa.mjs",
     "directory:ingest:samhsa": "node scripts/import-samhsa.mjs",
+    "directory:ingest:epa-food": "node scripts/import-epa-food-assistance.mjs",
     "directory:ingest:usda-summer-meals": "node scripts/import-usda-summer-meals.mjs",
     "directory:ingest:zcta": "node scripts/import-zcta.mjs"
   },

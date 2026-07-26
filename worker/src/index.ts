@@ -92,7 +92,14 @@ const CURRENTLY_AVAILABLE_SQL =
 export interface SearchOptions {
   query?: string;
   category?: string;
-  need?: 'food' | 'medical-care' | 'mental-health' | 'substance-use' | 'detox';
+  need?:
+    | 'food'
+    | 'food-assistance'
+    | 'summer-meals'
+    | 'medical-care'
+    | 'mental-health'
+    | 'substance-use'
+    | 'detox';
   city?: string;
   zip?: string;
   latitude?: number;
@@ -193,6 +200,8 @@ export function parseSearchOptions(url: URL): SearchOptions {
   const requestedNeed = clean(url.searchParams.get('need'), 40)?.toLowerCase();
   const supportedNeeds = new Set([
     'food',
+    'food-assistance',
+    'summer-meals',
     'medical-care',
     'mental-health',
     'substance-use',
@@ -233,6 +242,12 @@ export function buildResourceQuery(
   if (options.need === 'food') {
     conditions.push('category = ?');
     bindings.push('food');
+  } else if (options.need === 'food-assistance') {
+    conditions.push('source_name = ?');
+    bindings.push('EPA / Hunger Free America');
+  } else if (options.need === 'summer-meals') {
+    conditions.push('source_name = ?');
+    bindings.push('USDA SUN Meals');
   } else if (options.need === 'medical-care') {
     conditions.push('source_name = ?');
     bindings.push('HRSA');
