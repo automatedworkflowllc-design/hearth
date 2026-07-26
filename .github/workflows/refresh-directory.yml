@@ -1,6 +1,9 @@
 name: Refresh national directory
 
 on:
+  schedule:
+    # HRSA publishes daily; a weekly refresh balances freshness with free-tier usage.
+    - cron: '43 9 * * 1'
   workflow_dispatch:
 
 permissions:

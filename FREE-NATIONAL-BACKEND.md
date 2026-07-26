@@ -101,14 +101,12 @@ belong in Worker secrets.
 
 - `.github/workflows/production-monitor.yml` runs every six hours and checks the public page,
   database-backed health response, CORS policy, a known-good ZIP search, and invalid-input handling.
-- `.github/workflows/refresh-directory.yml` is manual-ready: it downloads the official HRSA CSV,
+- `.github/workflows/refresh-directory.yml` runs every Monday: it downloads the official HRSA CSV,
   refuses to continue if fewer than 15,000 active rows normalize successfully, applies the
   idempotent import to D1, and reruns the production monitor.
 - The refresh workflow requires a scoped `CLOUDFLARE_API_TOKEN` repository secret and a
   `CLOUDFLARE_ACCOUNT_ID` repository variable. The token should be limited to the Hearth
   Cloudflare account and only the permissions Wrangler needs to edit D1.
-- After that secret is installed and a manual refresh succeeds, enable the weekly `schedule`
-  trigger. Keeping it manual until then avoids a known-failing scheduled workflow.
 - `GET /health` returns live active-resource and ZIP-centroid counts plus the latest completed
   import. It returns HTTP 503 when data is missing or the latest import is more than 14 days old.
 
