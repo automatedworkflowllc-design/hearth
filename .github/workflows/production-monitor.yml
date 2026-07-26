@@ -1,0 +1,26 @@
+name: Production monitor
+
+on:
+  schedule:
+    # Offset from the top of the hour to avoid the busiest Actions queue window.
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-monitor
+  cancel-in-progress: true
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check public site, directory health, and known-good search
+        run: node scripts/check-production.mjs

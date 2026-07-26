@@ -1,0 +1,66 @@
+name: Refresh national directory
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: refresh-national-directory
+  cancel-in-progress: false
+
+jobs:
+  refresh-hrsa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      HRSA_DOWNLOAD_URL: https://data.hrsa.gov/DataDownload/DD_Files/Health_Center_Service_Delivery_and_LookAlike_Sites.csv
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Require scoped Cloudflare credentials
+        shell: bash
+        run: |
+          if [[ -z "$CLOUDFLARE_API_TOKEN" || -z "$CLOUDFLARE_ACCOUNT_ID" ]]; then
+            echo "::error::Add CLOUDFLARE_API_TOKEN as a repository secret and CLOUDFLARE_ACCOUNT_ID as a repository variable."
+            exit 1
+          fi
+
+      - run: npm ci
+
+      - name: Download current HRSA service-site data
+        shell: bash
+        run: |
+          curl \
+            --fail \
+            --location \
+            --retry 5 \
+            --retry-all-errors \
+            --output "$RUNNER_TEMP/hrsa-health-centers.csv" \
+            "$HRSA_DOWNLOAD_URL"
+
+      - name: Generate and validate the idempotent D1 import
+        shell: bash
+        run: |
+          npm run --silent directory:ingest:hrsa -- \
+            --input="$RUNNER_TEMP/hrsa-health-centers.csv" \
+            --output="$RUNNER_TEMP/hrsa.sql" \
+            > "$RUNNER_TEMP/hrsa-summary.json"
+          node -e "const fs=require('node:fs');const s=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/hrsa-summary.json','utf8'));if(s.imported<15000)throw new Error('HRSA safety gate failed: only '+s.imported+' active rows.');console.log(JSON.stringify(s,null,2));"
+
+      - name: Apply the validated refresh to production D1
+        run: >
+          npx wrangler d1 execute hearth-directory
+          --remote
+          --config worker/wrangler.jsonc
+          --file "$RUNNER_TEMP/hrsa.sql"
+
+      - name: Verify production counts, freshness, and search
+        run: npm run check:production

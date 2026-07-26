@@ -97,6 +97,27 @@ The production database and Worker were created on July 26, 2026. For future cha
 Do not place a 211 or HRSA web-service token in any `VITE_*` variable. Later provider credentials
 belong in Worker secrets.
 
+### Automated checks and refreshes
+
+- `.github/workflows/production-monitor.yml` runs every six hours and checks the public page,
+  database-backed health response, CORS policy, a known-good ZIP search, and invalid-input handling.
+- `.github/workflows/refresh-directory.yml` is manual-ready: it downloads the official HRSA CSV,
+  refuses to continue if fewer than 15,000 active rows normalize successfully, applies the
+  idempotent import to D1, and reruns the production monitor.
+- The refresh workflow requires a scoped `CLOUDFLARE_API_TOKEN` repository secret and a
+  `CLOUDFLARE_ACCOUNT_ID` repository variable. The token should be limited to the Hearth
+  Cloudflare account and only the permissions Wrangler needs to edit D1.
+- After that secret is installed and a manual refresh succeeds, enable the weekly `schedule`
+  trigger. Keeping it manual until then avoids a known-failing scheduled workflow.
+- `GET /health` returns live active-resource and ZIP-centroid counts plus the latest completed
+  import. It returns HTTP 503 when data is missing or the latest import is more than 14 days old.
+
+Run the same monitor from a workstation with:
+
+```powershell
+npm run check:production
+```
+
 ## Broader free data sequence
 
 1. Request the 211 National Data Platform free trial at <https://apiportal.211.org/get-started-overview>.

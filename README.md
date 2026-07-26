@@ -96,6 +96,9 @@ JavaScript.
 - The deployed demo currently covers Gainesville, Florida, not the nation.
 - The deployed national pilot currently covers HRSA-listed health centers. Broader category
   coverage still requires approved 211 access, more source adapters, and ongoing human review.
+- Production is checked every six hours, and the directory has a guarded, manual-ready HRSA
+  refresh workflow. The refresh refuses suspiciously small upstream datasets before touching
+  production; weekly scheduling will be enabled after its scoped Cloudflare token is installed.
 - Records change. Hearth shows review status but is not an emergency dispatch service. The product
   directs people to 211 for current community referrals, 988 for crisis support, and 911 for
   immediate danger.

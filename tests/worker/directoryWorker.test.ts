@@ -1,9 +1,51 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildResourceQuery,
+  handleRequest,
   parseSearchOptions,
   rowToResource,
 } from '../../worker/src/index';
+
+function healthEnvironment({
+  activeResources = 18_885,
+  zipCentroids = 33_791,
+  completedAt = new Date().toISOString(),
+}: {
+  activeResources?: number;
+  zipCentroids?: number;
+  completedAt?: string;
+} = {}) {
+  return {
+    DB: {
+      prepare(sql: string) {
+        return {
+          bind() {
+            return this;
+          },
+          async all<T>() {
+            return { results: [] as T[] };
+          },
+          async first<T>() {
+            if (sql.includes('resources WHERE active = 1')) {
+              return { total: activeResources } as T;
+            }
+            if (sql.includes('zip_centroids')) return { total: zipCentroids } as T;
+            if (sql.includes('FROM import_runs')) {
+              return {
+                source_name: 'HRSA',
+                completed_at: completedAt,
+                imported_count: activeResources,
+                skipped_count: 0,
+              } as T;
+            }
+            return null;
+          },
+        };
+      },
+    },
+    ALLOWED_ORIGIN: 'https://automatedworkflowllc-design.github.io',
+  };
+}
 
 describe('national directory worker', () => {
   it('bounds public search inputs and produces a safe parameterized query', () => {
@@ -78,5 +120,44 @@ describe('national directory worker', () => {
       kind: 'government',
     });
     expect(resource.distanceMiles).toBeGreaterThanOrEqual(0);
+  });
+
+  it('reports database counts and import freshness from the health endpoint', async () => {
+    const response = await handleRequest(
+      new Request('https://directory.example/health', {
+        headers: { Origin: 'https://automatedworkflowllc-design.github.io' },
+      }),
+      healthEnvironment()
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      ok: true,
+      service: 'hearth-directory',
+      data: {
+        activeResources: 18_885,
+        zipCentroids: 33_791,
+        fresh: true,
+        latestImport: {
+          source: 'HRSA',
+          importedCount: 18_885,
+        },
+      },
+    });
+  });
+
+  it('fails health checks when the latest completed import is stale', async () => {
+    const response = await handleRequest(
+      new Request('https://directory.example/health'),
+      healthEnvironment({ completedAt: '2020-01-01T00:00:00.000Z' })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(payload).toMatchObject({
+      ok: false,
+      data: { fresh: false },
+    });
   });
 });

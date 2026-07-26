@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:unit": "vitest run",
+    "check:production": "node scripts/check-production.mjs",
     "check:directory": "tsc -p worker/tsconfig.json",
     "directory:dev": "wrangler dev --config worker/wrangler.jsonc",
     "directory:migrate:local": "wrangler d1 migrations apply hearth-directory --local --config worker/wrangler.jsonc",

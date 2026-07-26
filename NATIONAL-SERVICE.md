@@ -54,8 +54,13 @@ index with source-specific adapters and transparent provenance.
    services.
    - <https://data.hrsa.gov/topics/health-centers>
    - <https://data.hrsa.gov/tools/web-services>
-3. **SAMHSA facility data — behavioral-health supplement.** The public N-SUMHSS files include
-   national facility location and service data. Treat each release as a dated snapshot.
+3. **SAMHSA national directories — qualified behavioral-health supplement.** The N-SUMHSS
+   public-use research file does not expose the facility names, addresses, or phone numbers Hearth
+   needs for listings. SAMHSA's official 2025 mental-health and substance-use Excel directories
+   do include those contact details and service codes, so those workbooks are the appropriate
+   ingestion candidates. Treat them as annual, self-reported snapshots, preserve their publication
+   date, and verify details before travel.
+   - <https://www.samhsa.gov/data/data-we-collect/n-sumhss-national-substance-use-and-mental-health-services-survey/national-directories>
    - <https://www.samhsa.gov/data/data-we-collect/n-sumhss-national-substance-use-and-mental-health-services-survey/datafiles/2024>
 4. **Legal Services Corporation — legal-aid seed and reconciliation source.** LSC reports
    129 funded organizations and more than 800 offices nationwide. Ingest office data only from

@@ -2,6 +2,7 @@ const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
 const MAX_OFFSET = 10_000;
 const SEARCH_RADIUS_MILES = 75;
+const MAX_IMPORT_AGE_HOURS = 24 * 14;
 const HRSA_SOURCE_URL = 'https://data.hrsa.gov/topics/health-centers';
 
 interface D1Result<T> {
@@ -53,6 +54,13 @@ interface ResourceRow {
 interface ZipCentroidRow {
   latitude: number;
   longitude: number;
+}
+
+interface ImportRunRow {
+  source_name: string;
+  completed_at: string;
+  imported_count: number;
+  skipped_count: number;
 }
 
 export interface SearchOptions {
@@ -399,6 +407,59 @@ async function search(request: Request, env: Env): Promise<Response> {
   );
 }
 
+async function health(request: Request, env: Env): Promise<Response> {
+  const [resourceCount, zipCount, latestImport] = await Promise.all([
+    env.DB
+      .prepare('SELECT COUNT(*) AS total FROM resources WHERE active = 1')
+      .first<{ total: number }>(),
+    env.DB.prepare('SELECT COUNT(*) AS total FROM zip_centroids').first<{ total: number }>(),
+    env.DB
+      .prepare(
+        `SELECT source_name, completed_at, imported_count, skipped_count
+         FROM import_runs
+         WHERE status = 'completed' AND completed_at IS NOT NULL
+         ORDER BY completed_at DESC
+         LIMIT 1`
+      )
+      .first<ImportRunRow>(),
+  ]);
+
+  const completedAt = latestImport?.completed_at;
+  const completedAtMs = completedAt ? Date.parse(completedAt) : Number.NaN;
+  const importAgeHours = Number.isFinite(completedAtMs)
+    ? Math.max(0, Math.round(((Date.now() - completedAtMs) / 3_600_000) * 10) / 10)
+    : null;
+  const dataFresh = importAgeHours !== null && importAgeHours <= MAX_IMPORT_AGE_HOURS;
+  const activeResources = resourceCount?.total ?? 0;
+  const zipCentroids = zipCount?.total ?? 0;
+  const ok = activeResources > 0 && zipCentroids > 0 && Boolean(latestImport) && dataFresh;
+
+  return json(
+    {
+      ok,
+      service: 'hearth-directory',
+      checkedAt: new Date().toISOString(),
+      data: {
+        activeResources,
+        zipCentroids,
+        fresh: dataFresh,
+        maximumImportAgeHours: MAX_IMPORT_AGE_HOURS,
+        latestImport: latestImport
+          ? {
+              source: latestImport.source_name,
+              completedAt: latestImport.completed_at,
+              importedCount: latestImport.imported_count,
+              skippedCount: latestImport.skipped_count,
+              ageHours: importAgeHours,
+            }
+          : null,
+      },
+    },
+    ok ? 200 : 503,
+    allowedOrigin(request, env)
+  );
+}
+
 export async function handleRequest(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   const origin = allowedOrigin(request, env);
@@ -408,7 +469,20 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
     return json({ error: 'Method not allowed.' }, 405, origin);
   }
   if (url.pathname === '/health') {
-    return json({ ok: true, service: 'hearth-directory' }, 200, origin);
+    try {
+      return await health(request, env);
+    } catch {
+      return json(
+        {
+          ok: false,
+          service: 'hearth-directory',
+          checkedAt: new Date().toISOString(),
+          error: 'Directory health data is unavailable.',
+        },
+        503,
+        origin
+      );
+    }
   }
   if (url.pathname !== '/v1/resources/search') {
     return json({ error: 'Not found.' }, 404, origin);
