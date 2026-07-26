@@ -6,6 +6,12 @@
 > original snapshot below remains useful history, but its test counts and “one-line provider swap”
 > description are superseded by [NATIONAL-SERVICE.md](./NATIONAL-SERVICE.md),
 > [DATA-OPERATIONS.md](./DATA-OPERATIONS.md), and the current [PROJECT.md](./PROJECT.md).
+>
+> **National-pilot update (2026-07-26):** A Cloudflare Worker/D1 directory service is deployed at
+> `hearth-directory.automaticworkflowllc.workers.dev`, populated with 18,885 active HRSA
+> health-center sites and 33,791 Census ZIP centroids. The public frontend is configured as an
+> honestly labeled national health-center pilot. The broader all-category data gap described below
+> remains real and is the next product phase.
 
 Written 2026-07-25 for a reviewer with no prior context. Everything below was verified against
 the repo at commit `895f850`, not recalled.

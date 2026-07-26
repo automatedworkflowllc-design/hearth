@@ -14,7 +14,11 @@ const EMPTY_FACETS: DirectoryFacets = { languages: [], hasWheelchairData: false 
  * Runs a bounded query against either the bundled demo or a server-backed national provider.
  * In-flight requests are aborted when the query changes, preventing stale results from winning.
  */
-export function useResources(provider: ResourceProvider, request: ResourceSearchRequest) {
+export function useResources(
+  provider: ResourceProvider,
+  request: ResourceSearchRequest,
+  enabled = true
+) {
   const [resources, setResources] = useState<Resource[]>([]);
   const [total, setTotal] = useState(0);
   const [facets, setFacets] = useState<DirectoryFacets>(EMPTY_FACETS);
@@ -22,6 +26,15 @@ export function useResources(provider: ResourceProvider, request: ResourceSearch
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!enabled) {
+      setResources([]);
+      setTotal(0);
+      setFacets(EMPTY_FACETS);
+      setStatus('ready');
+      setError(null);
+      return;
+    }
+
     const controller = new AbortController();
     let cancelled = false;
     setStatus('loading');
@@ -46,7 +59,7 @@ export function useResources(provider: ResourceProvider, request: ResourceSearch
       cancelled = true;
       controller.abort();
     };
-  }, [provider, request]);
+  }, [enabled, provider, request]);
 
   return {
     resources,

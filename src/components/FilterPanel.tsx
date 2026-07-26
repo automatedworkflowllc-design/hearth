@@ -15,6 +15,7 @@ interface FilterPanelProps {
   wheelchairOnly?: boolean;
   onWheelchairOnlyChange?: (enabled: boolean) => void;
   resultsContext?: string;
+  availableCategoryIds?: string[];
 }
 
 // Plain text labels: the emoji that used to prefix these rendered inconsistently across the
@@ -42,15 +43,19 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   wheelchairOnly = false,
   onWheelchairOnlyChange,
   resultsContext = 'in the Gainesville, FL area',
+  availableCategoryIds,
 }) => {
   const hasSupportedAdvancedFilters =
     availableLanguages.length > 0 || wheelchairFilterAvailable;
+  const displayedCategories = availableCategoryIds
+    ? categories.filter((category) => availableCategoryIds.includes(category.id))
+    : categories;
 
   return (
     <div className="bg-surface rounded-2xl shadow-sm border border-border p-5">
       {/* Category Pills */}
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter by category">
-        {categories.map((cat) => {
+        {displayedCategories.map((cat) => {
           const isActive = selectedCategory.toLowerCase() === cat.id;
           return (
             <button

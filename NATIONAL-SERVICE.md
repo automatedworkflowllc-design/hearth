@@ -24,6 +24,20 @@ Gainesville demonstration provider.
 Provider credentials must stay in the directory service. Never place a 211, HRSA, or other
 secret in a `VITE_*` variable: Vite embeds those variables in public browser JavaScript.
 
+The first directory-service implementation now lives in `worker/`:
+
+- a Cloudflare Worker exposes the existing `GET /v1/resources/search` contract;
+- D1 migrations create normalized resource, ZIP-centroid, and import-audit tables;
+- the HRSA adapter imports 18,885 active national health-center sites from the current daily CSV;
+- the Census adapter imports 33,791 official 2025 ZCTA centroids for no-cost nearby ZIP search;
+- every imported result retains government provenance and is labeled as not independently
+  confirmed by Hearth.
+
+The complete no-cost setup and deployment procedure is in `FREE-NATIONAL-BACKEND.md`. The
+production service is deployed at
+<https://hearth-directory.automaticworkflowllc.workers.dev>; the public frontend identifies it as
+a national health-center pilot rather than implying complete multi-category coverage.
+
 ## Recommended national source stack
 
 No single public source has reliable, real-time coverage of every Hearth category. Use a layered
@@ -97,14 +111,15 @@ choose the displayed value through a documented source-precedence rule, and crea
 
 ## Production sequence
 
-1. Obtain permission and credentials for the 211 National Data Platform.
-2. Build the directory service and a scheduled ingestion worker in a private backend repository.
-3. Load 211 plus HRSA/SAMHSA/LSC supplements into a geospatial search index.
-4. Implement the review and correction workflow in `DATA-OPERATIONS.md`.
+1. Authenticate Wrangler to the project's free Cloudflare account and deploy the implemented
+   Worker/D1 service.
+2. Load the implemented Census and HRSA adapters, then connect the public frontend.
+3. Obtain permission and credentials for the 211 National Data Platform and add it as the broader
+   community-services source.
+4. Add SAMHSA/LSC supplements and implement the review workflow in `DATA-OPERATIONS.md`.
 5. Run a pilot across several urban, rural, and tribal ZIP codes before making a national-coverage
    claim.
-6. Configure `VITE_HEARTH_API_BASE_URL`, deploy the frontend, and monitor query failures,
-   zero-result ZIPs, stale records, and correction turnaround.
+6. Monitor query failures, zero-result ZIPs, stale records, and correction turnaround.
 
-The frontend implementation is ready for that service. The remaining blocker is operational:
-approved national data access plus a protected backend and review process.
+The frontend and first backend implementation are deployed. Broad multi-category coverage still
+depends on approved 211 access and a staffed review process.

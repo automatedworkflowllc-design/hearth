@@ -45,6 +45,7 @@ export const App: React.FC = () => {
     selectedLanguage,
     wheelchairOnly,
   ]);
+  const shouldSearchResources = RESOURCE_PROVIDER.coverage !== 'national' || Boolean(location);
   const {
     resources,
     total,
@@ -53,7 +54,8 @@ export const App: React.FC = () => {
     error: dataError,
     coverage,
     providerLabel,
-  } = useResources(RESOURCE_PROVIDER, resourceRequest);
+  } = useResources(RESOURCE_PROVIDER, resourceRequest, shouldSearchResources);
+  const needsNationalLocation = coverage === 'national' && !location;
 
   // When the user sets a location, default the sort to distance (unless they've chosen
   // name); when they clear it, fall back off distance. Never overrides an explicit choice.
@@ -113,6 +115,7 @@ export const App: React.FC = () => {
           onSearchChange={setSearchQuery}
           onSearchSubmit={focusResults}
           onCategorySelect={showCategory}
+          nationalHealthPilot={RESOURCE_PROVIDER.coverage === 'national'}
         />
 
         {coverage === 'local-demo' ? (
@@ -125,7 +128,10 @@ export const App: React.FC = () => {
           </div>
         ) : (
           <div role="status" className="bg-card-hover border-l-4 border-accent text-main rounded-xl px-4 py-3 text-sm">
-            Searching the <strong>{providerLabel}</strong>. Call to confirm time-sensitive details before traveling.
+            Searching the <strong>{providerLabel}</strong>. This first nationwide layer contains
+            HRSA-listed health centers; food, shelter, legal, and broader support coverage is still
+            being added. Dial <a className="font-semibold underline" href="tel:211">211</a> for a
+            live referral in any category.
           </div>
         )}
 
@@ -147,7 +153,7 @@ export const App: React.FC = () => {
           onCategoryChange={setSelectedCategory}
           sortBy={sortBy}
           onSortChange={setSortBy}
-          totalResultsCount={total}
+          totalResultsCount={needsNationalLocation ? 0 : total}
           distanceAvailable={!!location}
           availableLanguages={facets.languages}
           selectedLanguage={selectedLanguage}
@@ -155,7 +161,8 @@ export const App: React.FC = () => {
           wheelchairFilterAvailable={facets.hasWheelchairData}
           wheelchairOnly={wheelchairOnly}
           onWheelchairOnlyChange={setWheelchairOnly}
-          resultsContext={coverage === 'national' ? 'from the national directory' : 'in the Gainesville, FL area'}
+          resultsContext={coverage === 'national' ? 'from the national health-center pilot' : 'in the Gainesville, FL area'}
+          availableCategoryIds={coverage === 'national' ? ['all', 'health'] : undefined}
         />
 
         {/* Results heading -- also keeps the document outline sequential (h1 hero -> h2 here ->
@@ -202,6 +209,15 @@ export const App: React.FC = () => {
             <p className="text-muted text-sm max-w-md mx-auto">
               {dataError} Please dial{' '}
               <a className="text-primary font-semibold underline" href="tel:211">211</a> for a live referral.
+            </p>
+          </div>
+        ) : needsNationalLocation ? (
+          <div className="bg-surface rounded-2xl p-12 text-center border border-border shadow-sm">
+            <MapIcon className="w-12 h-12 text-muted mx-auto mb-3" aria-hidden="true" />
+            <h2 className="font-display text-lg font-bold text-main mb-1">Choose a location</h2>
+            <p className="text-muted text-sm max-w-md mx-auto">
+              Enter a ZIP code or opt into your device location to find nearby health centers.
+              Your search location is not stored by Hearth.
             </p>
           </div>
         ) : filteredResources.length === 0 ? (

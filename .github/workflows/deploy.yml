@@ -28,6 +28,9 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+        env:
+          VITE_HEARTH_API_BASE_URL: https://hearth-directory.automaticworkflowllc.workers.dev
+          VITE_RESOURCE_REPORT_EMAIL: automaticworkflowllc@gmail.com
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

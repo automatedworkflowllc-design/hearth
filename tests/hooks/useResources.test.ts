@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { useResources } from '../../src/hooks/useResources';
 import type { ResourceProvider } from '../../src/providers/resourceProvider';
 import type { Resource, ResourceSearchRequest } from '../../src/types/index';
@@ -54,5 +54,15 @@ describe('useResources (the query-based provider boundary)', () => {
     await waitFor(() => expect(result.current.status).toBe('error'));
     expect(result.current.error).toBe('boom');
     expect(result.current.resources).toEqual([]);
+  });
+
+  it('does not spend a provider query while national search is waiting for location', async () => {
+    const search = vi.fn(okProvider.search);
+    const provider = { ...okProvider, search };
+    const { result } = renderHook(() => useResources(provider, request, false));
+
+    expect(result.current.status).toBe('ready');
+    expect(result.current.total).toBe(0);
+    expect(search).not.toHaveBeenCalled();
   });
 });

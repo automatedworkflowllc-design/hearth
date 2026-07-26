@@ -1,8 +1,8 @@
 # Hearth project guide
 
-Hearth is a React + Vite community-resource finder being prepared for national U.S. coverage.
-The bundled data remains an honestly labeled Gainesville, Florida demonstration until a protected
-national directory service is connected.
+Hearth is a React + Vite community-resource finder expanding toward national U.S. coverage.
+The public build now connects to a protected national health-center pilot; the bundled Gainesville
+records remain the local-development fallback.
 
 ## Architecture
 
@@ -18,6 +18,9 @@ national directory service is connected.
 - `src/components/`: responsive UI, crisis actions, filters, list/map, resource details, corrections,
   and accessibility controls.
 - `src/data/resources.ts`: 11 source-backed Gainesville demonstration records.
+- `worker/`: Cloudflare Worker search API and D1 schema.
+- `scripts/import-hrsa.mjs`: batched import for 18,885 active HRSA health-center sites.
+- `scripts/import-zcta.mjs`: batched import for 33,791 Census ZIP centroids.
 
 The public browser must never receive an upstream directory credential. Configure only the Hearth
 proxy URL with `VITE_HEARTH_API_BASE_URL`.
@@ -39,6 +42,6 @@ npm test
 npm run build
 ```
 
-GitHub Pages deployment remains a static frontend. National operation therefore requires a
-separately hosted directory API with appropriate data-provider permission, caching, monitoring,
-and review operations.
+GitHub Pages remains the static frontend; the deployed Cloudflare Worker/D1 service supplies the
+national health-center pilot. Broader operation still requires additional permitted data sources,
+monitoring, and review operations.

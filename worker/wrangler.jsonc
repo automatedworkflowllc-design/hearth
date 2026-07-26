@@ -1,0 +1,17 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "hearth-directory",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-26",
+  "vars": {
+    "ALLOWED_ORIGIN": "https://automatedworkflowllc-design.github.io"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "hearth-directory",
+      "database_id": "0eeac485-df9a-42d1-90f4-cbb0a1c9e1ce",
+      "migrations_dir": "migrations"
+    }
+  ]
+}
