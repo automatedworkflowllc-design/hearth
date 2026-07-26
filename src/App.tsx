@@ -23,7 +23,7 @@ export const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedNeed, setSelectedNeed] = useState<
-    'all' | 'medical-care' | 'mental-health' | 'substance-use' | 'detox'
+    'all' | 'food' | 'medical-care' | 'mental-health' | 'substance-use' | 'detox'
   >('all');
   const [sortBy, setSortBy] = useState<'relevance' | 'name' | 'distance'>('relevance');
   const [selectedLanguage, setSelectedLanguage] = useState('all');
@@ -123,7 +123,7 @@ export const App: React.FC = () => {
     setSearchQuery('');
     if (IS_NATIONAL_DIRECTORY) {
       setSelectedNeed(
-        category as 'all' | 'medical-care' | 'mental-health' | 'substance-use' | 'detox'
+        category as 'all' | 'food' | 'medical-care' | 'mental-health' | 'substance-use' | 'detox'
       );
     } else {
       setSelectedCategory(category);
@@ -161,9 +161,9 @@ export const App: React.FC = () => {
           </div>
         ) : (
           <div role="status" className="bg-card-hover border-l-4 border-accent text-main rounded-xl px-4 py-3 text-sm">
-            Searching <strong>{providerLabel}</strong> across medical and behavioral-health
-            services. Use the need filters for cleaner results. For food, shelter, legal help, or
-            another category not yet covered nationally, dial{' '}
+            Searching <strong>{providerLabel}</strong> across free summer meals for kids, medical
+            care, and behavioral-health services. Use the need filters for cleaner results. For
+            shelter, housing, legal help, or another category not yet covered nationally, dial{' '}
             <a className="font-semibold underline" href="tel:211">211</a>.
           </div>
         )}
@@ -187,7 +187,13 @@ export const App: React.FC = () => {
             IS_NATIONAL_DIRECTORY
               ? (need) =>
                   setSelectedNeed(
-                    need as 'all' | 'medical-care' | 'mental-health' | 'substance-use' | 'detox'
+                    need as
+                      | 'all'
+                      | 'food'
+                      | 'medical-care'
+                      | 'mental-health'
+                      | 'substance-use'
+                      | 'detox'
                   )
               : setSelectedCategory
           }
@@ -203,12 +209,12 @@ export const App: React.FC = () => {
           onWheelchairOnlyChange={setWheelchairOnly}
           resultsContext={
             coverage === 'national'
-              ? 'from national medical and behavioral-health directories'
+              ? 'from national food, medical, and behavioral-health directories'
               : 'in the Gainesville, FL area'
           }
           availableCategoryIds={
             coverage === 'national'
-              ? ['all', 'medical-care', 'mental-health', 'substance-use', 'detox']
+              ? ['all', 'food', 'medical-care', 'mental-health', 'substance-use', 'detox']
               : ['all', 'food', 'shelter', 'health', 'legal', 'support']
           }
         />

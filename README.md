@@ -5,10 +5,10 @@ shelter, health, legal, and community-support resources for people who may be un
 
 **Live demo:** <https://automatedworkflowllc-design.github.io/hearth/>
 
-> The public build now connects to nationwide HRSA health-center and SAMHSA behavioral-health
-> directory layers, positioned with Census ZIP data. Food, shelter, legal, and broader
-> community-support coverage is still being added; Hearth directs people to 211 rather than
-> implying those categories are nationally complete.
+> The public build now connects to nationwide HRSA health-center, SAMHSA behavioral-health, and
+> seasonal USDA SUN Meals layers, positioned with Census ZIP data. Shelter, housing, legal, and
+> broader community-support coverage is still being added; Hearth directs people to 211 rather
+> than implying those categories are nationally complete.
 
 ## Why this exists
 
@@ -46,13 +46,14 @@ interface ResourceProvider {
 - With `VITE_HEARTH_API_BASE_URL`, the app queries
   `GET /v1/resources/search` on the protected Hearth directory service.
 - National ZIPs are sent to that service for nearby matching; GPS remains strictly opt-in.
-- National need filters use reviewed source and service tags for medical care, mental health,
-  substance-use treatment, and detox instead of treating every listing as generic health care.
+- National need filters use category, source, and service tags for free summer meals, medical
+  care, mental health, substance-use treatment, and detox.
 - Language and accessibility filters appear only when the provider supplies reviewed metadata.
 
-The free backend implementation now includes a Cloudflare Worker/D1 search service, an
-18,885-site HRSA importer, a 19,362-facility deduplicated SAMHSA importer, and 33,791 Census ZIP
-centroids. See
+The backend implementation now includes a Cloudflare Worker/D1 search service, an
+18,885-site HRSA importer, a 19,362-facility deduplicated SAMHSA importer, a guarded 49,298-site
+2026 USDA summer-meals importer, and 33,791 Census ZIP centroids. Seasonal date windows keep only
+currently operating meal sites visible. See
 [FREE-NATIONAL-BACKEND.md](./FREE-NATIONAL-BACKEND.md) for setup,
 [NATIONAL-SERVICE.md](./NATIONAL-SERVICE.md) for the source strategy, and
 [DATA-OPERATIONS.md](./DATA-OPERATIONS.md) for review cadence and corrections.
@@ -97,14 +98,15 @@ JavaScript.
 
 ## Honest limitations
 
-- The deployed service provides national proximity search for HRSA-listed health centers and
-  SAMHSA-listed behavioral-health facilities. The bundled Gainesville dataset remains the
-  development fallback when the national API is not configured.
-- Current national coverage includes HRSA-listed health centers and SAMHSA-listed mental-health
-  and substance-use treatment facilities. Broader categories still require approved 211 access,
-  more source adapters, and ongoing human review.
-- Production is checked every six hours. Guarded HRSA and SAMHSA refreshes refuse suspicious
-  upstream datasets before touching production.
+- The deployed service provides national proximity search for currently operating USDA-listed
+  summer meal sites for children, HRSA-listed health centers, and SAMHSA-listed behavioral-health
+  facilities. The bundled Gainesville dataset remains the development fallback when the national
+  API is not configured.
+- Summer meals are seasonal, limited to the published operating dates, and are not comprehensive
+  adult food assistance. Shelter, housing, legal, and broader community categories still require
+  additional permitted sources and ongoing human review.
+- Production is checked every six hours. Guarded USDA, HRSA, and SAMHSA refreshes refuse
+  suspicious upstream datasets before touching production.
 - Records change. Hearth shows review status but is not an emergency dispatch service. The product
   directs people to 211 for current community referrals, 988 for crisis support, and 911 for
   immediate danger.

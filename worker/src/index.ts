@@ -50,6 +50,8 @@ interface ResourceRow {
   review_note: string | null;
   reviewed_at: string;
   review_due_at: string;
+  availability_start: string | null;
+  availability_end: string | null;
 }
 
 interface ZipCentroidRow {
@@ -79,10 +81,18 @@ interface StoredContact {
   note?: string;
 }
 
+// USDA operating dates are local calendar dates, but the national feed does not
+// provide a timezone. UTC-10 is the last U.S. timezone to enter a new date; this
+// avoids hiding an end-date meal while it is still that day anywhere in the U.S.
+const CURRENT_US_DATE_SQL = "date('now','-10 hours')";
+const CURRENTLY_AVAILABLE_SQL =
+  `active = 1 AND (availability_start IS NULL OR availability_start <= ${CURRENT_US_DATE_SQL}) ` +
+  `AND (availability_end IS NULL OR availability_end >= ${CURRENT_US_DATE_SQL})`;
+
 export interface SearchOptions {
   query?: string;
   category?: string;
-  need?: 'medical-care' | 'mental-health' | 'substance-use' | 'detox';
+  need?: 'food' | 'medical-care' | 'mental-health' | 'substance-use' | 'detox';
   city?: string;
   zip?: string;
   latitude?: number;
@@ -181,7 +191,13 @@ export function parseSearchOptions(url: URL): SearchOptions {
       ? requestedSort
       : 'relevance';
   const requestedNeed = clean(url.searchParams.get('need'), 40)?.toLowerCase();
-  const supportedNeeds = new Set(['medical-care', 'mental-health', 'substance-use', 'detox']);
+  const supportedNeeds = new Set([
+    'food',
+    'medical-care',
+    'mental-health',
+    'substance-use',
+    'detox',
+  ]);
   if (requestedNeed && requestedNeed !== 'all' && !supportedNeeds.has(requestedNeed)) {
     throw new Error('Invalid need filter.');
   }
@@ -207,14 +223,17 @@ export function buildResourceQuery(
   options: SearchOptions,
   resolvedLocation?: ResolvedLocation
 ): BuiltQuery {
-  const conditions = ['active = 1'];
+  const conditions = [CURRENTLY_AVAILABLE_SQL];
   const bindings: unknown[] = [];
 
   if (options.category && options.category.toLowerCase() !== 'all') {
     conditions.push('category = ?');
     bindings.push(options.category.toLowerCase());
   }
-  if (options.need === 'medical-care') {
+  if (options.need === 'food') {
+    conditions.push('category = ?');
+    bindings.push('food');
+  } else if (options.need === 'medical-care') {
     conditions.push('source_name = ?');
     bindings.push('HRSA');
   } else if (options.need === 'mental-health') {
@@ -261,7 +280,7 @@ export function buildResourceQuery(
       id, source_name, source_url, source_updated_at, fetched_at, name, category,
       description, address, city, state, zip_code, latitude, longitude, phone,
       website, contacts_json, hours_text, eligibility, services_json, tags_json, review_status,
-      review_note, reviewed_at, review_due_at
+      review_note, reviewed_at, review_due_at, availability_start, availability_end
     FROM resources
     WHERE ${where}`;
   const order = resolvedLocation
@@ -413,7 +432,12 @@ export function rowToResource(row: ResourceRow, location?: ResolvedLocation) {
     eligibility: row.eligibility ?? undefined,
     services: parseStringArray(row.services_json),
     tags: parseStringArray(row.tags_json),
-    availabilityStatus: 'unknown',
+    availability:
+      row.availability_start && row.availability_end
+        ? `Available ${row.availability_start} through ${row.availability_end}`
+        : undefined,
+    availabilityStatus:
+      row.availability_start && row.availability_end ? 'open' : 'unknown',
     distanceMiles:
       location && hasCoordinates
         ? calculateDistanceMiles(location, row.latitude as number, row.longitude as number)
@@ -505,12 +529,12 @@ async function search(request: Request, env: Env): Promise<Response> {
 async function health(request: Request, env: Env): Promise<Response> {
   const [resourceCount, zipCount, sourceCounts, latestImport] = await Promise.all([
     env.DB
-      .prepare('SELECT COUNT(*) AS total FROM resources WHERE active = 1')
+      .prepare(`SELECT COUNT(*) AS total FROM resources WHERE ${CURRENTLY_AVAILABLE_SQL}`)
       .first<{ total: number }>(),
     env.DB.prepare('SELECT COUNT(*) AS total FROM zip_centroids').first<{ total: number }>(),
     env.DB
       .prepare(
-        'SELECT source_name, COUNT(*) AS total FROM resources WHERE active = 1 GROUP BY source_name'
+        `SELECT source_name, COUNT(*) AS total FROM resources WHERE ${CURRENTLY_AVAILABLE_SQL} GROUP BY source_name`
       )
       .all<SourceCountRow>(),
     env.DB

@@ -29,7 +29,7 @@ All of these returned real data to an unauthenticated request during verificatio
 | **HRSA health centers / FQHCs** — `data.hrsa.gov/data/download` | Health | Bulk CSV/XLSX, HTTP 200 verified. Includes **sliding-fee-scale** clinics — exactly the right population for a crisis finder. |
 | **HUD Housing Counseling agencies** — `data.hud.gov/Housing_Counselor/searchByLocation` | Housing (advisory) | Verified live for Gainesville. Counseling only — **not emergency beds**. |
 | **USDA SNAP retailers** — ArcGIS FeatureServer | Food retail | 253,894 records. See the caution below. |
-| **USDA Summer Meals sites** — bulk CSV | Free food for children | 49,836 rows, verified 17 MB download. Seasonal. |
+| **USDA 2026 SUN Meals Site Finder** — official ArcGIS layer | Free summer meals for children | Implemented. 59,347 published rows normalize to 49,298 clean, deduplicated seasonal sites across 52 state/territory codes; 29,169 were operating on 2026-07-26. |
 | **IRS EO Business Master File** (+ ProPublica Nonprofit Explorer API) | Org registry | Free, no key. Confirms an org is a real registered nonprofit — a *validation* layer, not a service directory. |
 | **Open Referral UK** — 10 council feeds | Multi | Real, live, continuously compliance-tested HSDS 3.0. **UK only** — useful as a reference implementation, not for US data. |
 
@@ -39,7 +39,16 @@ All of these returned real data to an unauthenticated request during verificatio
 stations. Showing it raw would send a hungry person to a convenience store expecting help. It must
 be filtered, or used only as a supplementary layer.
 
-**2. Do not use `feedam.org` ("Feed America").** It looks like the jackpot — free, no key, US-wide,
+**2. The USDA summer layer needs strict validation.** The current official app points to a layer
+whose service name includes “Testing,” and the raw layer contains dropped, expired, malformed, and
+explicit test-cycle records. Hearth resolves the layer through USDA’s official site-finder link,
+requires the current season and supported program/site/service models, validates dates, addresses,
+ZIPs, coordinates, and meal times, removes explicit test markers, and merges only exact duplicate
+site schedules. Operating dates are enforced by the search service so ended sites disappear
+automatically. State agencies submit these records; Hearth does not relabel them as independently
+verified.
+
+**3. Do not use `feedam.org` ("Feed America").** It looks like the jackpot — free, no key, US-wide,
 real HSDS 3.0, 310k locations — and the endpoint genuinely works. It was **refuted on data-integrity
 and licensing grounds**, with specifics:
 - **Freshness is fake.** `assured_date` is a batch-import stamp, not per-record verification: 200

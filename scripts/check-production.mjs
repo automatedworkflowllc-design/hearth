@@ -5,6 +5,8 @@ const API_URL =
   process.env.HEARTH_API_URL ??
   'https://hearth-directory.automaticworkflowllc.workers.dev';
 const SITE_ORIGIN = new URL(SITE_URL).origin;
+const currentMonth = new Date().getUTCMonth() + 1;
+const summerMealsExpected = currentMonth >= 6 && currentMonth <= 8;
 
 function ensure(condition, message) {
   if (!condition) throw new Error(message);
@@ -65,6 +67,14 @@ async function checkHealth() {
     health.data?.sources?.SAMHSA >= 15_000,
     `SAMHSA resource count is unexpectedly low: ${health.data?.sources?.SAMHSA ?? 'missing'}.`,
   );
+  if (summerMealsExpected) {
+    ensure(
+      health.data?.sources?.['USDA SUN Meals'] >= 1_000,
+      `Current USDA SUN Meals count is unexpectedly low: ${
+        health.data?.sources?.['USDA SUN Meals'] ?? 'missing'
+      }.`,
+    );
+  }
   ensure(
     response.headers.get('access-control-allow-origin') === SITE_ORIGIN,
     'Health endpoint returned an unexpected CORS origin.',
@@ -113,6 +123,16 @@ async function checkBehavioralHealthSearch() {
 
 async function checkNeedFilters() {
   const cases = [
+    ...(summerMealsExpected
+      ? [
+          {
+            need: 'food',
+            matches: (resource) =>
+              resource.category === 'food' &&
+              resource.review?.sources?.some((source) => source.name === 'USDA SUN Meals'),
+          },
+        ]
+      : []),
     {
       need: 'medical-care',
       matches: (resource) =>

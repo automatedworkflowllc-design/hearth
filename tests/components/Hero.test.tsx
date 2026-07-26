@@ -25,8 +25,8 @@ describe('Hero need shortcuts', () => {
     expect(screen.getByRole('button', { name: /mental health/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /substance-use help/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /detox support/i })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /food today/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /food, a warm bed, or legal help/i })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: /free summer meals/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /warm bed, housing, or legal help/i })).toHaveAttribute(
       'href',
       'tel:211'
     );
@@ -36,6 +36,9 @@ describe('Hero need shortcuts', () => {
     const { onCategorySelect } = renderHero(true);
     fireEvent.click(screen.getByRole('button', { name: /mental health/i }));
     expect(onCategorySelect).toHaveBeenCalledWith('mental-health');
+
+    fireEvent.click(screen.getByRole('button', { name: /free summer meals/i }));
+    expect(onCategorySelect).toHaveBeenCalledWith('food');
   });
 
   it('preserves the reviewed local-demo shortcuts', () => {

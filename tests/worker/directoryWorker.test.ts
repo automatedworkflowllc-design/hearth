@@ -102,6 +102,15 @@ describe('national directory worker', () => {
     expect(medical.sql).toContain('source_name = ?');
     expect(medical.bindings).toContain('HRSA');
 
+    const food = buildResourceQuery({
+      need: 'food',
+      sort: 'relevance',
+      limit: 20,
+      offset: 0,
+    });
+    expect(food.sql).toContain('category = ?');
+    expect(food.bindings).toContain('food');
+
     const substanceUse = buildResourceQuery({
       need: 'substance-use',
       sort: 'relevance',
@@ -148,6 +157,8 @@ describe('national directory worker', () => {
         review_note: 'Imported; not independently confirmed.',
         reviewed_at: '2026-07-26T00:00:00.000Z',
         review_due_at: '2026-07-26T00:00:00.000Z',
+        availability_start: null,
+        availability_end: null,
       },
       { latitude: 29.65, longitude: -82.32 }
     );
@@ -206,6 +217,8 @@ describe('national directory worker', () => {
       review_note: 'Facility-reported listing.',
       reviewed_at: '2026-07-26T00:00:00.000Z',
       review_due_at: '2026-07-26T00:00:00.000Z',
+      availability_start: null,
+      availability_end: null,
     });
 
     expect(resource.contacts).toEqual(
@@ -221,6 +234,52 @@ describe('national directory worker', () => {
         }),
       ])
     );
+  });
+
+  it('maps a seasonal USDA meal site and its operating window', () => {
+    const resource = rowToResource({
+      id: 'usda-sun-meals:example',
+      source_name: 'USDA SUN Meals',
+      source_url: 'https://www.fns.usda.gov/summer/sitefinder',
+      source_updated_at: '2026-07-25T00:00:00.000Z',
+      fetched_at: '2026-07-26T00:00:00.000Z',
+      name: 'Example Summer Meal Site',
+      category: 'food',
+      description: 'Free summer meals for children age 18 and under.',
+      address: '100 Main St',
+      city: 'Gainesville',
+      state: 'FL',
+      zip_code: '32601',
+      latitude: 29.6516,
+      longitude: -82.3248,
+      phone: '352-555-0100',
+      website: null,
+      contacts_json: '[]',
+      hours_text: 'Season: June 1, 2026–August 1, 2026.',
+      eligibility: 'Free for children age 18 and under.',
+      services_json: '["Free summer lunch"]',
+      tags_json: '["food","free meals","lunch"]',
+      review_status: 'exception',
+      review_note: 'State-submitted seasonal listing; call before traveling.',
+      reviewed_at: '2026-07-26T00:00:00.000Z',
+      review_due_at: '2026-08-01T23:59:59.999Z',
+      availability_start: '2026-06-01',
+      availability_end: '2026-08-01',
+    });
+
+    expect(resource).toMatchObject({
+      category: 'food',
+      availability: 'Available 2026-06-01 through 2026-08-01',
+      availabilityStatus: 'open',
+      review: {
+        sources: [
+          expect.objectContaining({
+            name: 'USDA SUN Meals',
+            kind: 'government',
+          }),
+        ],
+      },
+    });
   });
 
   it('reports database counts and import freshness from the health endpoint', async () => {

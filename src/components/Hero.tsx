@@ -31,6 +31,7 @@ const quickNeeds = [
 ];
 
 const nationalQuickNeeds = [
+  { category: 'food', label: 'Free summer meals', icon: Utensils },
   { category: 'medical-care', label: 'Medical care', icon: HeartPulse },
   { category: 'mental-health', label: 'Mental health', icon: Brain },
   { category: 'substance-use', label: 'Substance-use help', icon: Pill },
@@ -71,7 +72,7 @@ export const Hero: React.FC<HeroProps> = ({
 
           <p className="mt-4 max-w-xl text-base text-muted sm:text-lg">
             {nationalDirectory
-              ? 'Find nearby medical care, mental-health support, substance-use treatment, and detox services from national directories.'
+              ? 'Find free summer meals for kids, medical care, mental-health support, substance-use treatment, and detox services from national directories.'
               : 'Find food, a safe place to stay, health care, and legal help from real, recently-reviewed organizations near you.'}{' '}
             <span className="font-serif italic text-brand">You belong here.</span>
           </p>
@@ -142,7 +143,7 @@ export const Hero: React.FC<HeroProps> = ({
               href="tel:211"
               className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-border bg-app px-3.5 py-2.5 font-display text-sm font-bold text-primary hover:bg-card-hover"
             >
-              Need food, a warm bed, or legal help? Call 211
+              Need a warm bed, housing, or legal help? Call 211
             </a>
           )}
         </aside>

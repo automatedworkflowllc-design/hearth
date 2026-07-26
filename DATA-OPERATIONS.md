@@ -30,6 +30,7 @@ The UI exposes these states instead of applying a generic “verified” badge.
 | Field or resource type | Maximum interval |
 |---|---:|
 | Crisis, shelter intake, domestic-violence, seasonal service | 30 days |
+| USDA summer meal site feed during May–October | Weekly |
 | Phone, SMS, intake URL, walk-in address, eligibility | 90 days |
 | Standard service description and hours | 180 days |
 | Stable organization identity | 365 days |

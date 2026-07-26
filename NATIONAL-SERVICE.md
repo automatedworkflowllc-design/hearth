@@ -11,7 +11,7 @@ provider contract:
 
 ```text
 Browser
-  -> GET /v1/resources/search?q=&category=&zip=&lat=&lng=&limit=&cursor=
+  -> GET /v1/resources/search?q=&category=&need=&zip=&lat=&lng=&limit=&cursor=
   -> Hearth directory service
        -> normalized, deduplicated search index
        -> source adapters and review queue
@@ -31,6 +31,9 @@ The first directory-service implementation now lives in `worker/`:
 - the HRSA adapter imports 18,885 active national health-center sites from the current daily CSV;
 - the SAMHSA adapter merges the official mental-health and substance-use directories into 19,362
   public-address facilities with decoded services and structured phone/intake contacts;
+- the USDA adapter resolves the current official SUN Meals Site Finder layer, rejects unsafe or
+  malformed records, merges exact duplicate schedules, and imports 49,298 clean 2026 seasonal
+  sites; 29,169 were operating on 2026-07-26;
 - the Census adapter imports 33,791 official 2025 ZCTA centroids for no-cost nearby ZIP search;
 - every imported result retains government provenance and is labeled as not independently
   confirmed by Hearth.
@@ -65,7 +68,14 @@ index with source-specific adapters and transparent provenance.
    facility-reported snapshot and verify details before travel.
    - <https://www.samhsa.gov/data/data-we-collect/n-sumhss-national-substance-use-and-mental-health-services-survey/national-directories>
    - <https://www.samhsa.gov/data/data-we-collect/n-sumhss-national-substance-use-and-mental-health-services-survey/datafiles/2024>
-4. **Legal Services Corporation — legal-aid seed and reconciliation source.** LSC reports
+4. **USDA SUN Meals Site Finder — implemented seasonal food layer.** USDA’s official finder
+   includes state-submitted open and restricted-open summer meal sites for children age 18 and
+   under. Hearth imports supported SFSP/SSO sites with valid locations, dates, and meal times,
+   discloses pickup and attendance restrictions, and shows a record only during its published
+   operating window. This is not adult food assistance or year-round food coverage.
+   - <https://www.fns.usda.gov/summer/sitefinder>
+   - <https://www.fns.usda.gov/sfsp/participant>
+5. **Legal Services Corporation — legal-aid seed and reconciliation source.** LSC reports
    129 funded organizations and more than 800 offices nationwide. Ingest office data only from
    a permitted structured source or an explicit partner export; do not scrape a consumer site
    in production.
@@ -78,7 +88,7 @@ complete national coverage for a category.
 
 `GET /v1/resources/search` accepts:
 
-- `q`, `category`, repeated `tag`
+- `q`, `category`, or `need` (`food`, `medical-care`, `mental-health`, `substance-use`, `detox`)
 - either `zip` or `lat` + `lng`
 - `sort` (`relevance`, `name`, `distance`)
 - `language`, `wheelchair`
@@ -121,7 +131,8 @@ choose the displayed value through a documented source-precedence rule, and crea
 
 1. Authenticate Wrangler to the project's free Cloudflare account and deploy the implemented
    Worker/D1 service.
-2. Load the implemented Census, HRSA, and SAMHSA adapters, then connect the public frontend.
+2. Load the implemented Census, HRSA, SAMHSA, and USDA SUN Meals adapters, then connect the public
+   frontend.
 3. Obtain permission and credentials for the 211 National Data Platform and add it as the broader
    community-services source.
 4. Add a permitted LSC supplement and implement the review workflow in `DATA-OPERATIONS.md`.
