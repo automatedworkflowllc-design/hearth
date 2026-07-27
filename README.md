@@ -91,7 +91,7 @@ Optional environment:
 
 ```bash
 VITE_HEARTH_API_BASE_URL=https://directory.example.org
-VITE_RESOURCE_REPORT_EMAIL=automaticworkflowllc@gmail.com
+VITE_RESOURCE_REPORT_EMAIL=automatedworkflowllc@gmail.com
 ```
 
 Do not place upstream provider secrets in `VITE_*` variables. They are embedded in public browser

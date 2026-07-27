@@ -26,7 +26,7 @@ interface ResourceDetailModalProps {
 const FOCUSABLE =
   'a[href], button:not([disabled]), textarea, input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 const REPORT_EMAIL =
-  import.meta.env.VITE_RESOURCE_REPORT_EMAIL?.trim() || 'automaticworkflowllc@gmail.com';
+  import.meta.env.VITE_RESOURCE_REPORT_EMAIL?.trim() || 'automatedworkflowllc@gmail.com';
 
 function formatDate(isoDate: string): string {
   const date = new Date(`${isoDate}T00:00:00Z`);

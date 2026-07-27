@@ -67,7 +67,15 @@ The report link asks people not to include health, immigration, legal, housing, 
 personal details. Do not add free-form case-intake fields to this directory workflow.
 
 For production, `VITE_RESOURCE_REPORT_EMAIL` may override the monitored inbox. The committed
-fallback is `automaticworkflowllc@gmail.com`, confirmed by the project owner.
+fallback is `automatedworkflowllc@gmail.com` — spelled **automat*ed*** — confirmed directly by the
+owner on 2026-07-27.
+
+> **Correction (2026-07-27).** This previously read `automat*ic*workflowllc@gmail.com` and claimed
+> it was owner-confirmed; it was not, and the address was wrong. Because this mailto is the only
+> channel a user has to report an incorrect crisis or DV number — which this document commits to
+> acting on *immediately* — a wrong address means those reports fail silently. Note the deployed
+> Worker subdomain (`hearth-directory.automaticworkflowllc.workers.dev`) legitimately uses the
+> other spelling; it is a live resource name and must not be "corrected".
 
 ## Source outages and removals
 

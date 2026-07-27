@@ -102,7 +102,7 @@ describe('ResourceDetailModal release behaviors', () => {
     );
 
     const report = screen.getByRole('link', { name: /report outdated information/i });
-    expect(report.getAttribute('href')).toMatch(/^mailto:automaticworkflowllc@gmail\.com/);
+    expect(report.getAttribute('href')).toMatch(/^mailto:automatedworkflowllc@gmail\.com/);
     expect(decodeURIComponent(report.getAttribute('href') ?? '')).toContain(
       'Hearth listing update: Release Check Resource'
     );
