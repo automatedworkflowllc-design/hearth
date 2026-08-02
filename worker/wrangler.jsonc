@@ -13,5 +13,19 @@
       "database_id": "0eeac485-df9a-42d1-90f4-cbb0a1c9e1ce",
       "migrations_dir": "migrations"
     }
-  ]
+  ],
+  // Cloudflare's native rate limiter, shared per colo. The first attempt was an
+  // in-isolate Map, and a measured 80-request/2s burst produced ZERO 429s -- the
+  // edge spread the requests across isolates so no single Map ever saw 60. The
+  // in-worker Map remains only as a fallback when this binding is absent (tests).
+  "unsafe": {
+    "bindings": [
+      {
+        "name": "SEARCH_RATE",
+        "type": "ratelimit",
+        "namespace_id": "1001",
+        "simple": { "limit": 60, "period": 60 }
+      }
+    ]
+  }
 }

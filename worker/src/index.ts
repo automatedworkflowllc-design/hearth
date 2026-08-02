@@ -32,6 +32,9 @@ interface DirectoryDatabase {
 interface Env {
   DB: DirectoryDatabase;
   ALLOWED_ORIGIN?: string;
+  /** Cloudflare ratelimit binding (wrangler.jsonc unsafe.bindings). Optional so
+   * tests and local dev without the binding fall back to the in-isolate Map. */
+  SEARCH_RATE?: { limit(options: { key: string }): Promise<{ success: boolean }> };
 }
 
 interface ResourceRow {
@@ -660,8 +663,19 @@ async function health(request: Request, env: Env): Promise<Response> {
 const RATE_LIMIT_PER_MINUTE = 60;
 const rateWindows = new Map<string, { windowStart: number; count: number }>();
 
-function rateLimited(request: Request): boolean {
+async function rateLimited(request: Request, env: Env): Promise<boolean> {
   const key = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+  // Preferred path: Cloudflare's ratelimit binding, shared across isolates in a
+  // colo. Measured 2026-08-02: the Map alone let an 80-request/2s burst through
+  // untouched because the edge spread it across isolates.
+  if (env.SEARCH_RATE) {
+    try {
+      const { success } = await env.SEARCH_RATE.limit({ key });
+      return !success;
+    } catch {
+      // Binding hiccup: fall through to the Map rather than failing open silently.
+    }
+  }
   const now = Date.now();
   const window = rateWindows.get(key);
   if (!window || now - window.windowStart >= 60_000) {
@@ -701,7 +715,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
   if (url.pathname !== '/v1/resources/search') {
     return json({ error: 'Not found.' }, 404, origin);
   }
-  if (rateLimited(request)) {
+  if (await rateLimited(request, env)) {
     const response = json(
       { error: 'Too many requests. Please wait a moment and try again, or dial 211 for a live referral.' },
       429,
