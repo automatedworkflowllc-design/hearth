@@ -146,10 +146,14 @@ function json(value: unknown, status = 200, origin = '*'): Response {
   });
 }
 
-function allowedOrigin(request: Request, env: Env): string {
+function allowedOrigin(_request: Request, env: Env): string {
   const configured = env.ALLOWED_ORIGIN?.trim();
   if (!configured || configured === '*') return '*';
-  return request.headers.get('Origin') === configured ? configured : configured;
+  // Always the single configured origin. The previous version compared the request
+  // Origin and then returned `configured` on BOTH branches -- a dead ternary that
+  // read like origin validation but did nothing. Browsers enforce the mismatch:
+  // a foreign origin receives ACAO for the locked origin and is blocked client-side.
+  return configured;
 }
 
 function clean(value: string | null, maximumLength = 120): string | undefined {
@@ -308,10 +312,16 @@ export function buildResourceQuery(
       review_note, reviewed_at, review_due_at, availability_start, availability_end
     FROM resources
     WHERE ${where}`;
-  const order = resolvedLocation
+  // The SQL ORDER BY is the pagination cursor's total order, so it must match the
+  // REQUESTED sort. Previously the SQL always ordered by distance when a location
+  // was present while the JS layer re-sorted each page by name -- every 50-row page
+  // was the next-nearest slice shown alphabetically, interleaving names across
+  // pages and duplicating/skipping rows at cursor boundaries.
+  const orderByDistance = resolvedLocation && options.sort === 'distance';
+  const order = orderByDistance
     ? 'ORDER BY ((latitude - ?) * (latitude - ?)) + ((longitude - ?) * (longitude - ?)), name'
     : 'ORDER BY name';
-  const orderingBindings = resolvedLocation
+  const orderingBindings = orderByDistance && resolvedLocation
     ? [
         resolvedLocation.latitude,
         resolvedLocation.latitude,
@@ -518,15 +528,9 @@ async function search(request: Request, env: Env): Promise<Response> {
   const nextOffset = options.offset + page.results.length;
   const resources = page.results.map((row) => rowToResource(row, location));
 
-  if (location && options.sort === 'distance') {
-    resources.sort(
-      (left, right) =>
-        (left.distanceMiles ?? Number.POSITIVE_INFINITY) -
-        (right.distanceMiles ?? Number.POSITIVE_INFINITY)
-    );
-  } else {
-    resources.sort((left, right) => left.name.localeCompare(right.name));
-  }
+  // No in-memory re-sort: the SQL ORDER BY is the cursor's total order, and
+  // re-sorting a page here is what made pagination interleave and skip rows.
+  // Display order and cursor order must be the same order.
 
   return json(
     {
@@ -646,6 +650,30 @@ async function health(request: Request, env: Env): Promise<Response> {
   );
 }
 
+// Per-IP fixed-window rate limit for the search endpoint. Each search runs an
+// unindexable LIKE scan twice (page + COUNT) over ~60k rows, so an unauthenticated
+// loop can burn the D1 daily read quota and take the directory down for everyone.
+// This is an in-isolate Map: state resets when the isolate recycles and is not
+// shared across Cloudflare's edge, so it bounds a single hot client rather than a
+// distributed attack -- honest scope, but it converts "one curl loop kills the
+// site" into "one curl loop gets 429s". 60/min is far above any human browsing.
+const RATE_LIMIT_PER_MINUTE = 60;
+const rateWindows = new Map<string, { windowStart: number; count: number }>();
+
+function rateLimited(request: Request): boolean {
+  const key = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+  const now = Date.now();
+  const window = rateWindows.get(key);
+  if (!window || now - window.windowStart >= 60_000) {
+    // Cap map growth: a new window is also a cheap moment to shed stale entries.
+    if (rateWindows.size > 10_000) rateWindows.clear();
+    rateWindows.set(key, { windowStart: now, count: 1 });
+    return false;
+  }
+  window.count += 1;
+  return window.count > RATE_LIMIT_PER_MINUTE;
+}
+
 export async function handleRequest(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   const origin = allowedOrigin(request, env);
@@ -672,6 +700,15 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
   }
   if (url.pathname !== '/v1/resources/search') {
     return json({ error: 'Not found.' }, 404, origin);
+  }
+  if (rateLimited(request)) {
+    const response = json(
+      { error: 'Too many requests. Please wait a moment and try again, or dial 211 for a live referral.' },
+      429,
+      origin
+    );
+    response.headers.set('Retry-After', '30');
+    return response;
   }
 
   try {

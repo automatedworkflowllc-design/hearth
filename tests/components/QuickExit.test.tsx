@@ -51,4 +51,27 @@ describe('QuickExit', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(replaceSpy).toHaveBeenCalledTimes(1);
   });
+
+  // The window-expiry branch (now - t <= 1500ms) was the only part of the gesture
+  // the suite did not pin down. Someone pressing Escape occasionally over several
+  // seconds -- closing dialogs, hesitating -- must never be ejected off the site.
+  it('does NOT leave when three presses are spread past the 1.5s window', () => {
+    vi.useFakeTimers();
+    try {
+      render(<QuickExit />);
+      fireEvent.keyDown(document, { key: 'Escape' });
+      vi.advanceTimersByTime(2000);
+      fireEvent.keyDown(document, { key: 'Escape' });
+      vi.advanceTimersByTime(2000);
+      fireEvent.keyDown(document, { key: 'Escape' });
+      expect(replaceSpy).not.toHaveBeenCalled();
+      // And stale presses must not linger: two more rapid presses complete a
+      // fresh triple (the third press above + these two inside one window).
+      fireEvent.keyDown(document, { key: 'Escape' });
+      fireEvent.keyDown(document, { key: 'Escape' });
+      expect(replaceSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
