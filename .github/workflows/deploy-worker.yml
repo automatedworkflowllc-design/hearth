@@ -1,0 +1,57 @@
+name: Deploy worker
+
+# The API worker previously had no CI deploy path -- every change was a manual
+# `wrangler deploy` from someone's machine, and the scheduled refresh jobs were
+# applying D1 migrations against a worker whose deployed version nobody could
+# pin to a commit. Now worker changes on main deploy the same way the site does.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'worker/**'
+      - '.github/workflows/deploy-worker.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-worker
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Guard credentials
+        run: |
+          if [[ -z "$CLOUDFLARE_API_TOKEN" || -z "$CLOUDFLARE_ACCOUNT_ID" ]]; then
+            echo "::error::Add CLOUDFLARE_API_TOKEN as a repository secret and CLOUDFLARE_ACCOUNT_ID as a repository variable."
+            exit 1
+          fi
+      - run: npm ci
+      - name: Typecheck worker
+        run: npx tsc -p worker --noEmit
+      - name: Deploy
+        run: npx wrangler deploy --config worker/wrangler.jsonc
+      - name: Verify live health
+        # A deploy that exits 0 while serving a broken worker is the exact
+        # silent-failure shape this repo keeps finding. Ask the deployed code
+        # itself before calling the deploy good.
+        run: |
+          sleep 5
+          status=$(curl -s -o /tmp/health.json -w "%{http_code}" --max-time 20 \
+            "https://hearth-directory.automaticworkflowllc.workers.dev/health")
+          cat /tmp/health.json
+          if [[ "$status" != "200" ]]; then
+            echo "::error::/health returned $status after deploy"
+            exit 1
+          fi
