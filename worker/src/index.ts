@@ -636,6 +636,21 @@ async function health(request: Request, env: Env): Promise<Response> {
           ...imports.filter((row) => !row.fresh).map((row) => row.source),
           ...EXPECTED_SOURCES.filter((name) => !imports.some((row) => row.source === name)),
         ],
+        // Diagnostic: is the ratelimit binding present and answering? Added while
+        // chasing a limiter that never denied; cheap to keep -- it turns "rate
+        // limiting exists" from an assumption into an observable.
+        rateLimiter: await (async () => {
+          if (!env.SEARCH_RATE) return { mode: 'fallback-map', probe: null };
+          try {
+            const probe = await env.SEARCH_RATE.limit({ key: 'health-probe' });
+            return { mode: 'binding', probe };
+          } catch (error) {
+            return {
+              mode: 'binding-error',
+              probe: error instanceof Error ? error.message : String(error),
+            };
+          }
+        })(),
         // Kept for compatibility with existing monitors: the newest import overall.
         latestImport: newest
           ? {
