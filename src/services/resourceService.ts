@@ -5,8 +5,13 @@ import { mockResources } from '../data/resources.ts';
  * Calculates the Haversine distance between two geographical points in miles.
  */
 export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) {
-    return 0;
+  if (!Number.isFinite(lat1) || !Number.isFinite(lon1) || !Number.isFinite(lat2) || !Number.isFinite(lon2)) {
+    // NaN, deliberately -- the old `return 0` was the most misleading possible
+    // sentinel: 0 sorts as "nearest" and renders as a plausible "0 mi". A caller
+    // passing bad coords should get a visibly broken value, not a lie. (The
+    // internal caller in searchResources already finite-guards, so this branch
+    // is defense for external/future callers only.)
+    return Number.NaN;
   }
 
   const R = 3958.8; // Earth radius in miles

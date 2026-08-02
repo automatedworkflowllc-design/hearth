@@ -100,6 +100,17 @@ describe('calculateDistance (Haversine)', () => {
     expect(d).toBeGreaterThan(2);
     expect(d).toBeLessThan(6);
   });
+  it('never returns 0 for invalid coordinates (0 sorts as "nearest")', () => {
+    // The old NaN->0 sentinel made a broken coordinate the closest resource on
+    // the list. Bad input must be visibly bad, not plausibly near.
+    for (const d of [
+      calculateDistance(Number.NaN, -82.32, 29.65, -82.32),
+      calculateDistance(29.65, Number.NaN, 29.65, -82.32),
+      calculateDistance(29.65, -82.32, Number.POSITIVE_INFINITY, -82.32),
+    ]) {
+      expect(Number.isNaN(d)).toBe(true);
+    }
+  });
 });
 
 describe('getResourceById', () => {

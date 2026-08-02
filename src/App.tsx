@@ -21,6 +21,14 @@ const IS_NATIONAL_DIRECTORY = RESOURCE_PROVIDER.coverage === 'national';
 
 export const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  // Debounced copy of the query for the network request. Typing "food pantry"
+  // used to fire 11 worker round-trips and 11 list-disappearing flashes; the
+  // input stays instant, the request waits for a 300ms pause.
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedNeed, setSelectedNeed] = useState<
     | 'all'
@@ -61,7 +69,7 @@ export const App: React.FC = () => {
   }, [prepareDistanceSort, setFromPostalCode]);
 
   const resourceRequest = useMemo(() => ({
-    query: searchQuery,
+    query: debouncedQuery,
     category: IS_NATIONAL_DIRECTORY ? 'all' : selectedCategory,
     need: IS_NATIONAL_DIRECTORY ? selectedNeed : undefined,
     userLocation: location ?? undefined,
@@ -70,7 +78,7 @@ export const App: React.FC = () => {
     wheelchairAccessibleOnly: wheelchairOnly,
     limit: 50,
   }), [
-    searchQuery,
+    debouncedQuery,
     selectedCategory,
     selectedNeed,
     location,
@@ -280,7 +288,11 @@ export const App: React.FC = () => {
 
         {/* Results -- loading/error (from the ResourceProvider async boundary) first, then the
             empty state, which wins in BOTH views so the 211 fallback is never lost. */}
-        {dataStatus === 'loading' ? (
+        {dataStatus === 'loading' && resources.length === 0 ? (
+          // Full-panel loading ONLY when there is nothing to show yet. During a
+          // refinement (new keystroke, filter change) the previous list stays
+          // visible instead of flashing away -- the hook keeps prior results
+          // until the new page resolves.
           <div className="bg-surface rounded-2xl p-12 text-center border border-border shadow-sm">
             <p className="text-muted text-sm" role="status">Loading resources…</p>
           </div>
