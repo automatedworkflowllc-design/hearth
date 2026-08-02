@@ -25,6 +25,23 @@ function healthEnvironment({
             return this;
           },
           async all<T>() {
+            if (sql.includes('FROM import_runs')) {
+              // One completed run per expected source -- /health is only green
+              // when EVERY source is fresh, so the fixture must cover all four.
+              return {
+                results: [
+                  'HRSA',
+                  'SAMHSA',
+                  'USDA SUN Meals',
+                  'EPA / Hunger Free America',
+                ].map((source_name) => ({
+                  source_name,
+                  completed_at: completedAt,
+                  imported_count: activeResources,
+                  skipped_count: 0,
+                })) as T[],
+              };
+            }
             if (sql.includes('GROUP BY source_name')) {
               return {
                 results: Object.entries(sources).map(([source_name, total]) => ({
@@ -40,14 +57,6 @@ function healthEnvironment({
               return { total: activeResources } as T;
             }
             if (sql.includes('zip_centroids')) return { total: zipCentroids } as T;
-            if (sql.includes('FROM import_runs')) {
-              return {
-                source_name: 'HRSA',
-                completed_at: completedAt,
-                imported_count: activeResources,
-                skipped_count: 0,
-              } as T;
-            }
             return null;
           },
         };
@@ -317,12 +326,50 @@ describe('national directory worker', () => {
         zipCentroids: 33_791,
         sources: { HRSA: 18_885 },
         fresh: true,
+        staleSources: [],
         latestImport: {
           source: 'HRSA',
           importedCount: 18_885,
         },
       },
     });
+    // Freshness is now per-source: all four expected sources must be present.
+    expect(payload.data.imports).toHaveLength(4);
+    expect(payload.data.imports.every((row: { fresh: boolean }) => row.fresh)).toBe(true);
+  });
+
+  it('fails health when one source is stale, even if another is fresh', async () => {
+    // The pre-fix behavior: one recent import kept /health green while any other
+    // source rotted indefinitely. This pins the fix.
+    const environment = healthEnvironment();
+    const originalPrepare = environment.DB.prepare.bind(environment.DB);
+    environment.DB.prepare = (sql: string) => {
+      const statement = originalPrepare(sql);
+      if (sql.includes('FROM import_runs')) {
+        return {
+          ...statement,
+          async all<T>() {
+            return {
+              results: [
+                { source_name: 'HRSA', completed_at: new Date().toISOString(), imported_count: 1, skipped_count: 0 },
+                { source_name: 'SAMHSA', completed_at: new Date().toISOString(), imported_count: 1, skipped_count: 0 },
+                { source_name: 'USDA SUN Meals', completed_at: new Date().toISOString(), imported_count: 1, skipped_count: 0 },
+                { source_name: 'EPA / Hunger Free America', completed_at: '2020-01-01T00:00:00.000Z', imported_count: 1, skipped_count: 0 },
+              ] as T[],
+            };
+          },
+        };
+      }
+      return statement;
+    };
+    const response = await handleRequest(
+      new Request('https://directory.example/health'),
+      environment
+    );
+    const payload = await response.json();
+    expect(response.status).toBe(503);
+    expect(payload.data.fresh).toBe(false);
+    expect(payload.data.staleSources).toContain('EPA / Hunger Free America');
   });
 
   it('fails health checks when the latest completed import is stale', async () => {

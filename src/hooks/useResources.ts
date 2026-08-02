@@ -24,6 +24,7 @@ export function useResources(
   const [facets, setFacets] = useState<DirectoryFacets>(EMPTY_FACETS);
   const [status, setStatus] = useState<ResourceLoadStatus>('loading');
   const [error, setError] = useState<string | null>(null);
+  const [zipRecognized, setZipRecognized] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!enabled) {
@@ -32,6 +33,7 @@ export function useResources(
       setFacets(EMPTY_FACETS);
       setStatus('ready');
       setError(null);
+      setZipRecognized(null);
       return;
     }
 
@@ -47,6 +49,7 @@ export function useResources(
         setResources(result.resources);
         setTotal(result.total);
         setFacets(result.facets);
+        setZipRecognized(result.zipRecognized ?? null);
         setStatus('ready');
       })
       .catch((errorValue) => {
@@ -67,6 +70,7 @@ export function useResources(
     facets,
     status,
     error,
+    zipRecognized,
     providerLabel: provider.label,
     coverage: provider.coverage,
   };

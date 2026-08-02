@@ -13,8 +13,10 @@ describe('SafetyBar crisis actions', () => {
     expect(
       screen.getByRole('link', { name: /call the national domestic violence hotline/i })
     ).toHaveAttribute('href', 'tel:18007997233');
+    // body=START prefills the keyword the shortcode requires -- without it the
+    // composer opens empty and the user must remember to type START themselves.
     expect(
       screen.getByRole('link', { name: /text start to 88788/i })
-    ).toHaveAttribute('href', 'sms:88788');
+    ).toHaveAttribute('href', 'sms:88788?body=START');
   });
 });

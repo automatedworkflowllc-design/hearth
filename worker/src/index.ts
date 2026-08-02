@@ -3,6 +3,16 @@ const MAX_LIMIT = 100;
 const MAX_OFFSET = 10_000;
 const SEARCH_RADIUS_MILES = 75;
 const MAX_IMPORT_AGE_HOURS = 24 * 14;
+
+// Every source the directory is built on. /health is only green when each of these
+// has a completed import inside the freshness window -- add new sources here so a
+// forgotten import can never hide behind the others.
+const EXPECTED_SOURCES = [
+  'HRSA',
+  'SAMHSA',
+  'USDA SUN Meals',
+  'EPA / Hunger Free America',
+] as const;
 const HRSA_SOURCE_URL = 'https://data.hrsa.gov/topics/health-centers';
 
 interface D1Result<T> {
@@ -535,6 +545,11 @@ async function search(request: Request, env: Env): Promise<Response> {
         radiusMiles: location ? SEARCH_RADIUS_MILES : null,
         sources: [...new Set(page.results.map((row) => row.source_name))],
       },
+      // A well-formed ZIP that is not in zip_centroids silently degraded to an
+      // exact zip_code match -- usually 0 rows -- and the empty state then told the
+      // user "no resources near you", which is not what happened. Surface the truth
+      // so the client can say "we don't recognize that ZIP" instead.
+      zipRecognized: options.zip ? Boolean(location) : null,
     },
     200,
     allowedOrigin(request, env)
@@ -554,27 +569,48 @@ async function health(request: Request, env: Env): Promise<Response> {
       .all<SourceCountRow>(),
     env.DB
       .prepare(
-        `SELECT source_name, completed_at, imported_count, skipped_count
+        // Latest completed run PER SOURCE. The previous LIMIT 1 across all sources
+        // meant one healthy import kept /health green while any other source went
+        // stale indefinitely -- a freshness light that could not turn red.
+        `SELECT source_name, MAX(completed_at) AS completed_at, imported_count, skipped_count
          FROM import_runs
          WHERE status = 'completed' AND completed_at IS NOT NULL
-         ORDER BY completed_at DESC
-         LIMIT 1`
+         GROUP BY source_name
+         ORDER BY completed_at DESC`
       )
-      .first<ImportRunRow>(),
+      .all<ImportRunRow>(),
   ]);
 
-  const completedAt = latestImport?.completed_at;
-  const completedAtMs = completedAt ? Date.parse(completedAt) : Number.NaN;
-  const importAgeHours = Number.isFinite(completedAtMs)
-    ? Math.max(0, Math.round(((Date.now() - completedAtMs) / 3_600_000) * 10) / 10)
-    : null;
-  const dataFresh = importAgeHours !== null && importAgeHours <= MAX_IMPORT_AGE_HOURS;
+  const ageHoursOf = (iso: string | null): number | null => {
+    const ms = iso ? Date.parse(iso) : Number.NaN;
+    return Number.isFinite(ms)
+      ? Math.max(0, Math.round(((Date.now() - ms) / 3_600_000) * 10) / 10)
+      : null;
+  };
+  const importRows = latestImport.results ?? [];
+  const imports = importRows.map((row) => {
+    const ageHours = ageHoursOf(row.completed_at);
+    return {
+      source: row.source_name,
+      completedAt: row.completed_at,
+      importedCount: row.imported_count,
+      skippedCount: row.skipped_count,
+      ageHours,
+      fresh: ageHours !== null && ageHours <= MAX_IMPORT_AGE_HOURS,
+    };
+  });
+  // Fresh means EVERY expected source is within the window and has imported at
+  // least once. "Some source somewhere is recent" is not freshness.
+  const dataFresh =
+    imports.length >= EXPECTED_SOURCES.length && imports.every((row) => row.fresh);
+  const newest = imports[0] ?? null;
+  const importAgeHours = newest?.ageHours ?? null;
   const activeResources = resourceCount?.total ?? 0;
   const zipCentroids = zipCount?.total ?? 0;
   const sources = Object.fromEntries(
     sourceCounts.results.map((row) => [row.source_name, row.total])
   );
-  const ok = activeResources > 0 && zipCentroids > 0 && Boolean(latestImport) && dataFresh;
+  const ok = activeResources > 0 && zipCentroids > 0 && imports.length > 0 && dataFresh;
 
   return json(
     {
@@ -587,12 +623,19 @@ async function health(request: Request, env: Env): Promise<Response> {
         sources,
         fresh: dataFresh,
         maximumImportAgeHours: MAX_IMPORT_AGE_HOURS,
-        latestImport: latestImport
+        imports,
+        staleSources: [
+          // Sources past the window, plus expected sources that have never imported.
+          ...imports.filter((row) => !row.fresh).map((row) => row.source),
+          ...EXPECTED_SOURCES.filter((name) => !imports.some((row) => row.source === name)),
+        ],
+        // Kept for compatibility with existing monitors: the newest import overall.
+        latestImport: newest
           ? {
-              source: latestImport.source_name,
-              completedAt: latestImport.completed_at,
-              importedCount: latestImport.imported_count,
-              skippedCount: latestImport.skipped_count,
+              source: newest.source,
+              completedAt: newest.completedAt,
+              importedCount: newest.importedCount,
+              skippedCount: newest.skippedCount,
               ageHours: importAgeHours,
             }
           : null,

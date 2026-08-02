@@ -70,7 +70,7 @@ export const SafetyBar: React.FC = () => (
             <Phone className="h-4 w-4" aria-hidden="true" /> Call
           </a>
           <a
-            href="sms:88788"
+            href="sms:88788?body=START"
             className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border-input bg-surface px-2 py-2 text-sm font-bold text-main transition-colors hover:bg-app"
             aria-label="Text START to 88788 for the National Domestic Violence Hotline"
           >

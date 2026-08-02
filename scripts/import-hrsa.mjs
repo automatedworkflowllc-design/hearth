@@ -262,13 +262,20 @@ async function main() {
   }
   if (batch.length) await writeChunk(destination, insertStatement(batch));
 
+  // Shrink guard -- see import-samhsa.mjs for the full rationale. Sweep only runs
+  // when the new import is >=75% of the prior active set; otherwise prior records
+  // stay ACTIVE and the run is marked 'shrink_blocked' so /health alarms.
+  const priorActive = `(SELECT COUNT(*) FROM resources WHERE source_name=${sql(SOURCE_NAME)} AND active=1 AND fetched_at<>${sql(fetchedAt)})`;
+  const newlyImported = `(SELECT COUNT(*) FROM resources WHERE source_name=${sql(SOURCE_NAME)} AND fetched_at=${sql(fetchedAt)})`;
   await writeChunk(
     destination,
-    `UPDATE resources SET active=0 WHERE source_name=${sql(SOURCE_NAME)} AND fetched_at<>${sql(fetchedAt)};\n`
+    process.env.ALLOW_SHRINK === '1'
+      ? `UPDATE resources SET active=0 WHERE source_name=${sql(SOURCE_NAME)} AND fetched_at<>${sql(fetchedAt)};\n`
+      : `UPDATE resources SET active=0 WHERE source_name=${sql(SOURCE_NAME)} AND fetched_at<>${sql(fetchedAt)} AND ${priorActive} * 3 <= ${newlyImported} * 4;\n`
   );
   await writeChunk(
     destination,
-    `UPDATE import_runs SET completed_at=${sql(new Date().toISOString())},imported_count=${imported},skipped_count=${skipped},status='completed' WHERE id=${sql(runId)};\n`
+    `UPDATE import_runs SET completed_at=${sql(new Date().toISOString())},imported_count=${imported},skipped_count=${skipped},status=CASE WHEN ${priorActive} > 0 THEN 'shrink_blocked' ELSE 'completed' END WHERE id=${sql(runId)};\n`
   );
   destination.end();
   await new Promise((resolvePromise, rejectPromise) => {

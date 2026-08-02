@@ -107,6 +107,7 @@ export function createNationalApiProvider(apiBaseUrl: string): ResourceProvider 
         facets: payload.facets ?? { languages: [], hasWheelchairData: false },
         nextCursor: payload.nextCursor,
         generatedAt: payload.generatedAt,
+        zipRecognized: typeof payload.zipRecognized === 'boolean' ? payload.zipRecognized : null,
       };
     },
   };

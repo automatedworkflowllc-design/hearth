@@ -85,6 +85,7 @@ export const App: React.FC = () => {
     facets,
     status: dataStatus,
     error: dataError,
+    zipRecognized,
     coverage,
     providerLabel,
   } = useResources(RESOURCE_PROVIDER, resourceRequest, shouldSearchResources);
@@ -303,15 +304,23 @@ export const App: React.FC = () => {
         ) : filteredResources.length === 0 ? (
           <div className="bg-surface rounded-2xl p-12 text-center border border-border shadow-sm">
             <AlertCircle className="w-12 h-12 text-muted mx-auto mb-3" />
-            <h2 className="font-display text-lg font-bold text-main mb-1">No resources found</h2>
+            <h2 className="font-display text-lg font-bold text-main mb-1">
+              {zipRecognized === false
+                ? "We don't recognize that ZIP code"
+                : 'No resources found'}
+            </h2>
             <p className="text-muted text-sm max-w-md mx-auto mb-4">
-              No resources match your current search. Try a different keyword or category, or dial 211 for a live referral.
+              {zipRecognized === false
+                ? 'The directory has no location data for that ZIP, so nothing nearby can be shown — it does not mean there is no help near you. Double-check the digits, try a neighboring ZIP or your device location, or dial 211 for a live referral.'
+                : 'No resources match your current search. Try a different keyword or category, or dial 211 for a live referral.'}
             </p>
             <button
               onClick={() => {
                 setSearchQuery('');
                 setSelectedCategory('all');
                 setSelectedNeed('all');
+                setSelectedLanguage('all');
+                setWheelchairOnly(false);
               }}
               className="min-h-11 px-4 py-2.5 bg-primary text-inverse font-display font-bold text-xs rounded-xl hover:bg-primary-hover transition-colors"
             >

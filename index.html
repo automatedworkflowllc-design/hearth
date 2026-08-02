@@ -11,6 +11,22 @@
   <!-- No color utilities here: a class selector outranks index.css's `body { ... var(--bg-app) }`,
        so stock palette classes would silently override the themed canvas. -->
   <body class="min-h-screen antialiased">
+    <!-- The people most likely to hit a no-JS state (old phone, broken browser,
+         script-blocking network) overlap heavily with the people this site exists
+         for. Without this block the page is COMPLETELY blank for them: no hotline
+         numbers, nothing. Static text, no styling dependencies, works everywhere. -->
+    <noscript>
+      <div style="max-width:36rem;margin:2rem auto;padding:1.5rem;font-family:system-ui,sans-serif;line-height:1.6;border:2px solid #b03d28;border-radius:12px">
+        <h1 style="font-size:1.25rem;margin:0 0 .75rem">Hearth needs JavaScript to search, but the important numbers work without it:</h1>
+        <ul style="margin:0 0 1rem;padding-left:1.25rem">
+          <li><strong>In immediate danger:</strong> call <a href="tel:911">911</a></li>
+          <li><strong>Need to talk or in crisis:</strong> call or text <a href="tel:988">988</a> (Suicide &amp; Crisis Lifeline)</li>
+          <li><strong>Domestic violence:</strong> call <a href="tel:18007997233">1-800-799-7233</a> or text START to <a href="sms:88788?body=START">88788</a></li>
+          <li><strong>Food, housing, or other local help:</strong> dial <a href="tel:211">211</a> for a live referral</li>
+        </ul>
+        <p style="margin:0;color:#555">To search the directory, enable JavaScript or try another browser. All calls above are free and confidential.</p>
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -117,6 +117,12 @@ export interface ResourceSearchResponse {
   facets: DirectoryFacets;
   nextCursor?: string;
   generatedAt?: string;
+  /**
+   * false when the request carried a ZIP the directory has no centroid for.
+   * "No results near you" and "we don't recognize that ZIP" are different
+   * messages to a person in need; null/undefined when no ZIP was involved.
+   */
+  zipRecognized?: boolean | null;
 }
 
 export interface FilterOptions {

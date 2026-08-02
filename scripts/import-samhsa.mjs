@@ -459,13 +459,24 @@ async function main() {
     destination,
     `UPDATE resources SET latitude=(SELECT latitude FROM zip_centroids WHERE zip_code=resources.zip_code),longitude=(SELECT longitude FROM zip_centroids WHERE zip_code=resources.zip_code) WHERE source_name=${sql(SOURCE_NAME)} AND fetched_at=${sql(fetchedAt)};\n`
   );
+  // Shrink guard: a truncated upstream file must not silently tombstone the
+  // directory. The deactivation sweep only runs when this import is at least 75%
+  // the size of the previously-active set (prior*3 <= new*4, integer-safe). When
+  // blocked, prior records stay ACTIVE and the run is recorded as
+  // 'shrink_blocked' instead of 'completed', so per-source freshness at /health
+  // goes stale and alarms rather than staying green over a gutted source.
+  // Set ALLOW_SHRINK=1 for known-legitimate collapses (e.g. season end).
+  const priorActive = `(SELECT COUNT(*) FROM resources WHERE source_name=${sql(SOURCE_NAME)} AND active=1 AND fetched_at<>${sql(fetchedAt)})`;
+  const newlyImported = `(SELECT COUNT(*) FROM resources WHERE source_name=${sql(SOURCE_NAME)} AND fetched_at=${sql(fetchedAt)})`;
   await writeChunk(
     destination,
-    `UPDATE resources SET active=0 WHERE source_name=${sql(SOURCE_NAME)} AND fetched_at<>${sql(fetchedAt)};\n`
+    process.env.ALLOW_SHRINK === '1'
+      ? `UPDATE resources SET active=0 WHERE source_name=${sql(SOURCE_NAME)} AND fetched_at<>${sql(fetchedAt)};\n`
+      : `UPDATE resources SET active=0 WHERE source_name=${sql(SOURCE_NAME)} AND fetched_at<>${sql(fetchedAt)} AND ${priorActive} * 3 <= ${newlyImported} * 4;\n`
   );
   await writeChunk(
     destination,
-    `UPDATE import_runs SET completed_at=${sql(new Date().toISOString())},imported_count=${records.length},skipped_count=${stats.skipped},status='completed' WHERE id=${sql(runId)};\n`
+    `UPDATE import_runs SET completed_at=${sql(new Date().toISOString())},imported_count=${records.length},skipped_count=${stats.skipped},status=CASE WHEN ${priorActive} > 0 THEN 'shrink_blocked' ELSE 'completed' END WHERE id=${sql(runId)};\n`
   );
   destination.end();
   await new Promise((resolvePromise, rejectPromise) => {
