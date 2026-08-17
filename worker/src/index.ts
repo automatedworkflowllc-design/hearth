@@ -2,6 +2,8 @@ const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
 const MAX_OFFSET = 10_000;
 const SEARCH_RADIUS_MILES = 75;
+// Fallback only, for a source that appears in import_runs but has no entry in
+// SOURCE_FRESHNESS below. Every EXPECTED source declares its own window.
 const MAX_IMPORT_AGE_HOURS = 24 * 14;
 
 // Every source the directory is built on. /health is only green when each of these
@@ -13,6 +15,51 @@ const EXPECTED_SOURCES = [
   'USDA SUN Meals',
   'EPA / Hunger Free America',
 ] as const;
+
+// A freshness window has to be derived from the source's OWN refresh cadence.
+// One global 14-day window was applied to all four, and two of them refresh
+// MONTHLY -- so they were fresh for 14 days and then guaranteed stale for the
+// remaining ~17 days of every month, forever, with nothing wrong. Measured
+// 2026-08-16: SAMHSA imported 08-01 15:37 and crossed 336h at 08-15 15:37; the
+// monitor's last green run was 08-15 12:59 and its first red 08-15 18:48. It then
+// failed every six hours for two days while the directory served all 50,097
+// resources normally. Five failure notifications went unread, which is the actual
+// cost -- a monitor that cries wolf on a schedule is one nobody reads.
+//
+// Window = the source's cadence plus room for one run to fail and be noticed,
+// so a LATE source still turns this red. Crons live in .github/workflows/.
+const SOURCE_FRESHNESS: Record<
+  string,
+  { maxAgeHours: number; cadence: string; activeMonths?: number[] }
+> = {
+  // refresh-directory.yml -- '43 9 * * 1', weekly on Monday.
+  HRSA: { maxAgeHours: 24 * 14, cadence: 'weekly (Mon)' },
+  // refresh-samhsa.yml -- '31 11 1 * *', monthly on the 1st.
+  SAMHSA: { maxAgeHours: 24 * 45, cadence: 'monthly (1st)' },
+  // refresh-epa-food-assistance.yml -- '23 11 8 * *', monthly on the 8th.
+  'EPA / Hunger Free America': { maxAgeHours: 24 * 45, cadence: 'monthly (8th)' },
+  // refresh-usda-summer-meals.yml -- '47 10 * 5-10 6', weekly Saturday, MAY-OCT ONLY.
+  // Out of season it is dormant by design, so it is not judged then: a fixed window
+  // would report it stale every November through April with nothing wrong. Its rows
+  // are already excluded from results out of season by availability_start/end
+  // (CURRENTLY_AVAILABLE_SQL), so dormancy is handled where it belongs.
+  'USDA SUN Meals': {
+    maxAgeHours: 24 * 14,
+    cadence: 'weekly (Sat), May-Oct',
+    activeMonths: [5, 6, 7, 8, 9, 10],
+  },
+};
+
+// The window that applies to a source right now, or null when the source is out of
+// its active season and is not expected to refresh at all.
+export function freshnessWindowFor(source: string, now: Date): number | null {
+  const rule = SOURCE_FRESHNESS[source];
+  if (!rule) return MAX_IMPORT_AGE_HOURS;
+  if (rule.activeMonths && !rule.activeMonths.includes(now.getUTCMonth() + 1)) {
+    return null;
+  }
+  return rule.maxAgeHours;
+}
 const HRSA_SOURCE_URL = 'https://data.hrsa.gov/topics/health-centers';
 
 interface D1Result<T> {
@@ -595,15 +642,21 @@ async function health(request: Request, env: Env): Promise<Response> {
       : null;
   };
   const importRows = latestImport.results ?? [];
+  const now = new Date();
   const imports = importRows.map((row) => {
     const ageHours = ageHoursOf(row.completed_at);
+    const window = freshnessWindowFor(row.source_name, now);
     return {
       source: row.source_name,
       completedAt: row.completed_at,
       importedCount: row.imported_count,
       skippedCount: row.skipped_count,
       ageHours,
-      fresh: ageHours !== null && ageHours <= MAX_IMPORT_AGE_HOURS,
+      // Each source is judged against its own cadence. A dormant seasonal source
+      // (window null) is not stale -- it is not due.
+      maxAgeHours: window,
+      dormant: window === null,
+      fresh: window === null || (ageHours !== null && ageHours <= window),
     };
   });
   // Fresh means EVERY expected source is within the window and has imported at
@@ -617,7 +670,19 @@ async function health(request: Request, env: Env): Promise<Response> {
   const sources = Object.fromEntries(
     sourceCounts.results.map((row) => [row.source_name, row.total])
   );
-  const ok = activeResources > 0 && zipCentroids > 0 && imports.length > 0 && dataFresh;
+  // Two different questions, which were previously answered by one flag.
+  //
+  //   servable  -- can this directory answer a search right now?
+  //   ok        -- is everything nominal, including data freshness?
+  //
+  // They were conflated, so a single behind-schedule source returned HTTP 503
+  // "Service Unavailable" while the service was serving 50,097 resources. The
+  // status code now answers "can I serve?" and `ok` still answers "is anything
+  // wrong?", so the existing monitor assertion (`health.ok === true`) keeps
+  // failing on stale data -- it just gets an accurate status code and a message
+  // that names the source, instead of a bare outage signal for a live service.
+  const servable = activeResources > 0 && zipCentroids > 0 && imports.length > 0;
+  const ok = servable && dataFresh;
 
   return json(
     {
@@ -629,7 +694,19 @@ async function health(request: Request, env: Env): Promise<Response> {
         zipCentroids,
         sources,
         fresh: dataFresh,
+        // The directory is up and answering, but something about the data is not
+        // nominal. Distinct from an outage, and the reason this returns 200.
+        servable,
+        degraded: servable && !dataFresh,
         maximumImportAgeHours: MAX_IMPORT_AGE_HOURS,
+        // Per-source windows, so a reader can see WHY a source is or is not stale
+        // rather than inferring it from one global number that does not apply.
+        freshnessPolicy: Object.fromEntries(
+          Object.entries(SOURCE_FRESHNESS).map(([source, rule]) => [
+            source,
+            { maxAgeHours: freshnessWindowFor(source, now), cadence: rule.cadence },
+          ])
+        ),
         imports,
         staleSources: [
           // Sources past the window, plus expected sources that have never imported.
@@ -663,7 +740,8 @@ async function health(request: Request, env: Env): Promise<Response> {
           : null,
       },
     },
-    ok ? 200 : 503,
+    // 503 means "I cannot serve." Stale data is reported at 200 with ok:false.
+    servable ? 200 : 503,
     allowedOrigin(request, env)
   );
 }

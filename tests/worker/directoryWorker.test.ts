@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildResourceQuery,
+  freshnessWindowFor,
   handleRequest,
   parseSearchOptions,
   rowToResource,
@@ -367,8 +368,13 @@ describe('national directory worker', () => {
       environment
     );
     const payload = await response.json();
-    expect(response.status).toBe(503);
+    // Stale data is reported at 200 with ok:false -- the directory can still serve.
+    // What must not regress is that it is still NOT ok and still names the source.
+    expect(response.status).toBe(200);
+    expect(payload.ok).toBe(false);
     expect(payload.data.fresh).toBe(false);
+    expect(payload.data.degraded).toBe(true);
+    expect(payload.data.servable).toBe(true);
     expect(payload.data.staleSources).toContain('EPA / Hunger Free America');
   });
 
@@ -379,10 +385,165 @@ describe('national directory worker', () => {
     );
     const payload = await response.json();
 
-    expect(response.status).toBe(503);
+    expect(response.status).toBe(200);
     expect(payload).toMatchObject({
       ok: false,
-      data: { fresh: false },
+      data: { fresh: false, degraded: true, servable: true },
     });
+  });
+
+  it('reserves 503 for a directory that genuinely cannot serve', async () => {
+    // The distinction the status code now carries. Zero resources is not "data is
+    // a bit old" -- a search returns nothing, so the service really is unavailable.
+    const response = await handleRequest(
+      new Request('https://directory.example/health'),
+      healthEnvironment({ activeResources: 0 })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(payload.ok).toBe(false);
+    expect(payload.data.servable).toBe(false);
+    expect(payload.data.degraded).toBe(false);
+  });
+
+  it('judges a monthly source against its own cadence, not the weekly window', async () => {
+    // The defect this fixes, as an exact reproduction. SAMHSA refreshes MONTHLY
+    // ('31 11 1 * *') and was judged against one global 14-day window, so it went
+    // stale ~17 days into every month with nothing wrong. 20 days old is normal
+    // for a monthly source and must be fresh; the same age on weekly HRSA must not.
+    const twentyDaysAgo = new Date(Date.now() - 20 * 24 * 3_600_000).toISOString();
+    const now = new Date().toISOString();
+    const withAges = (ages: Record<string, string>) => {
+      const environment = healthEnvironment();
+      const originalPrepare = environment.DB.prepare.bind(environment.DB);
+      environment.DB.prepare = (sql: string) => {
+        const statement = originalPrepare(sql);
+        if (sql.includes('FROM import_runs')) {
+          return {
+            ...statement,
+            async all<T>() {
+              return {
+                results: Object.entries(ages).map(([source_name, completed_at]) => ({
+                  source_name,
+                  completed_at,
+                  imported_count: 1,
+                  skipped_count: 0,
+                })) as T[],
+              };
+            },
+          };
+        }
+        return statement;
+      };
+      return environment;
+    };
+
+    const monthlyLate = await handleRequest(
+      new Request('https://directory.example/health'),
+      withAges({
+        HRSA: now,
+        SAMHSA: twentyDaysAgo,
+        'USDA SUN Meals': now,
+        'EPA / Hunger Free America': twentyDaysAgo,
+      })
+    );
+    const monthlyPayload = await monthlyLate.json();
+    expect(monthlyPayload.ok).toBe(true);
+    expect(monthlyPayload.data.staleSources).toEqual([]);
+
+    // NEGATIVE CONTROL: the identical age on the WEEKLY source must still go red.
+    // Without this the test above would also pass if freshness stopped working.
+    const weeklyLate = await handleRequest(
+      new Request('https://directory.example/health'),
+      withAges({
+        HRSA: twentyDaysAgo,
+        SAMHSA: now,
+        'USDA SUN Meals': now,
+        'EPA / Hunger Free America': now,
+      })
+    );
+    const weeklyPayload = await weeklyLate.json();
+    expect(weeklyPayload.ok).toBe(false);
+    expect(weeklyPayload.data.staleSources).toContain('HRSA');
+  });
+
+  it('applies each source its own window, and only suspends the seasonal one out of season', () => {
+    // Tested against EXPLICIT dates rather than "now". The health-endpoint test
+    // below can only exercise whichever branch the real calendar is in, so for six
+    // months of the year it would silently stop checking the other one. These two
+    // fixed dates check both halves regardless of when the suite runs.
+    const july = new Date('2026-07-15T00:00:00.000Z');
+    const january = new Date('2026-01-15T00:00:00.000Z');
+
+    // A monthly source gets a monthly window -- the whole point of the fix.
+    expect(freshnessWindowFor('SAMHSA', july)).toBe(24 * 45);
+    expect(freshnessWindowFor('EPA / Hunger Free America', july)).toBe(24 * 45);
+    // A weekly source keeps the tight one, so lateness is still caught.
+    expect(freshnessWindowFor('HRSA', july)).toBe(24 * 14);
+    expect(freshnessWindowFor('HRSA', january)).toBe(24 * 14);
+
+    // Seasonal: judged in season, not due out of season.
+    expect(freshnessWindowFor('USDA SUN Meals', july)).toBe(24 * 14);
+    expect(freshnessWindowFor('USDA SUN Meals', january)).toBeNull();
+
+    // Season boundaries, since 'May-Oct' is the kind of range that is off by one.
+    expect(freshnessWindowFor('USDA SUN Meals', new Date('2026-05-01T00:00:00.000Z'))).toBe(24 * 14);
+    expect(freshnessWindowFor('USDA SUN Meals', new Date('2026-10-31T00:00:00.000Z'))).toBe(24 * 14);
+    expect(freshnessWindowFor('USDA SUN Meals', new Date('2026-04-30T00:00:00.000Z'))).toBeNull();
+    expect(freshnessWindowFor('USDA SUN Meals', new Date('2026-11-01T00:00:00.000Z'))).toBeNull();
+
+    // An unknown source is not silently exempt -- it falls back to the tight window.
+    expect(freshnessWindowFor('Some Future Source', july)).toBe(24 * 14);
+  });
+
+  it('does not call a seasonal source stale while it is out of season', async () => {
+    // USDA SUN Meals runs weekly May-Oct only. A fixed window would report it stale
+    // every November through April with nothing wrong. Its rows are already hidden
+    // out of season by availability_start/end, so dormancy is not a health problem.
+    const longAgo = new Date(Date.now() - 200 * 24 * 3_600_000).toISOString();
+    const environment = healthEnvironment();
+    const originalPrepare = environment.DB.prepare.bind(environment.DB);
+    environment.DB.prepare = (sql: string) => {
+      const statement = originalPrepare(sql);
+      if (sql.includes('FROM import_runs')) {
+        return {
+          ...statement,
+          async all<T>() {
+            return {
+              results: [
+                { source_name: 'HRSA', completed_at: new Date().toISOString(), imported_count: 1, skipped_count: 0 },
+                { source_name: 'SAMHSA', completed_at: new Date().toISOString(), imported_count: 1, skipped_count: 0 },
+                { source_name: 'USDA SUN Meals', completed_at: longAgo, imported_count: 1, skipped_count: 0 },
+                { source_name: 'EPA / Hunger Free America', completed_at: new Date().toISOString(), imported_count: 1, skipped_count: 0 },
+              ] as T[],
+            };
+          },
+        };
+      }
+      return statement;
+    };
+
+    const response = await handleRequest(
+      new Request('https://directory.example/health'),
+      environment
+    );
+    const payload = await response.json();
+    const usda = payload.data.imports.find(
+      (row: { source: string }) => row.source === 'USDA SUN Meals'
+    );
+    const inSeason = [5, 6, 7, 8, 9, 10].includes(new Date().getUTCMonth() + 1);
+
+    // Asserted both ways so the test means something in either half of the year,
+    // rather than silently passing for six months because it is currently summer.
+    if (inSeason) {
+      expect(usda.dormant).toBe(false);
+      expect(usda.fresh).toBe(false);
+      expect(payload.data.staleSources).toContain('USDA SUN Meals');
+    } else {
+      expect(usda.dormant).toBe(true);
+      expect(usda.fresh).toBe(true);
+      expect(payload.data.staleSources).not.toContain('USDA SUN Meals');
+    }
   });
 });

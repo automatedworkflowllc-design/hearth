@@ -48,8 +48,27 @@ async function checkHealth() {
   });
   const health = await readJson(response, 'Health endpoint');
 
+  // A stale source now returns 200 with ok:false, so this still fails the run --
+  // but the failure says WHICH source is late and by how much. The old message was
+  // "Health endpoint returned HTTP 503", which reads as an outage and was wrong:
+  // the directory was serving every one of its resources at the time.
+  const staleDetail = () => {
+    const rows = Array.isArray(health.data?.imports) ? health.data.imports : [];
+    const late = rows.filter((row) => row && row.fresh === false);
+    if (late.length === 0) return '';
+    return ` Late: ${late
+      .map(
+        (row) =>
+          `${row.source} (${row.ageHours}h old, window ${row.maxAgeHours ?? 'n/a'}h, last ${row.completedAt})`,
+      )
+      .join('; ')}.`;
+  };
+
   ensure(response.status === 200, `Health endpoint returned HTTP ${response.status}.`);
-  ensure(health.ok === true, 'Directory health endpoint reported a degraded state.');
+  ensure(
+    health.ok === true,
+    `Directory health endpoint reported a degraded state.${staleDetail()}`,
+  );
   ensure(
     health.data?.activeResources >= 30_000,
     `Active resource count is unexpectedly low: ${health.data?.activeResources ?? 'missing'}.`,

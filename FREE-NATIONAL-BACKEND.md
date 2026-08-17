@@ -171,7 +171,22 @@ belong in Worker secrets.
   `CLOUDFLARE_ACCOUNT_ID` repository variable. The token should be limited to the Hearth
   Cloudflare account and only the permissions Wrangler needs to edit D1.
 - `GET /health` returns live active-resource and ZIP-centroid counts plus the latest completed
-  import. It returns HTTP 503 when data is missing or the latest import is more than 14 days old.
+  import per source.
+  - **The status code answers "can I serve?"** — HTTP 503 only when the directory genuinely
+    cannot answer a search (no resources, no ZIP centroids, no imports at all). Stale data
+    returns **HTTP 200 with `ok: false` and `degraded: true`**, because a directory serving
+    50,000 resources off slightly old data is not "Service Unavailable". Monitors should assert
+    on `ok`, which still fails on staleness; `staleSources` and `imports[].maxAgeHours` name the
+    source and the window it broke.
+  - **Freshness is per source, matched to that source's own refresh cadence** — not one global
+    window. HRSA (weekly) 14 days · SAMHSA (monthly) 45 days · EPA (monthly) 45 days · USDA SUN
+    Meals (weekly, May–Oct) 14 days in season and **not judged out of season**, since it is
+    dormant by design and its rows are already excluded by the availability window. `SOURCE_FRESHNESS`
+    in `worker/src/index.ts` is the source of truth and cites each cron.
+  - Why it changed: a single 14-day window was applied to sources that refresh monthly, so those
+    were fresh for 14 days and then **guaranteed stale for the rest of every month** with nothing
+    wrong. On 2026-08-15 that turned the production monitor red for two days while the service was
+    entirely healthy, and five failure notifications went unread.
 
 Run the same monitor from a workstation with:
 
