@@ -34,4 +34,22 @@ describe('FilterPanel result copy', () => {
     );
     expect(screen.getByText(/showing 11 resources in the gainesville, fl area/i)).toBeInTheDocument();
   });
+
+  it('does not treat the first page as the entire nearby directory', () => {
+    render(
+      <FilterPanel
+        {...baseProps}
+        totalResultsCount={390}
+        shownCount={50}
+        radiusMiles={75}
+        distanceAvailable
+        sortBy="distance"
+        resultsContext="from national food, medical, and behavioral-health directories"
+      />
+    );
+    expect(screen.getByText(/showing 50 of 390 resources/i)).toBeInTheDocument();
+    expect(screen.getByText(/within about 75 miles/i)).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /relevance/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /distance \(nearest\)/i })).toBeInTheDocument();
+  });
 });

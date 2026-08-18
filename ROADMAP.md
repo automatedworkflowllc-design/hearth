@@ -7,7 +7,9 @@ Directory health: <https://hearth-directory.automaticworkflowllc.workers.dev/hea
 
 ## Now — product quality
 
-- Keep the national ZIP-first search calm and honest (no “0 resources” before a location is chosen).
+- Location-first national search (no “0 resources” before a ZIP).
+- Honest pagination: show page size vs total, and load more via the directory cursor.
+- Nearby default order is distance, not the alphabet, when a ZIP is set.
 - Preserve accessibility: high-contrast, text size, Quick Exit, crisis numbers without JavaScript.
 - Review copy for leftover “always / verified / complete” claims after each UI change.
 
@@ -25,7 +27,6 @@ These gaps are product-defining. Do not fake them with demo rows.
 ## Later — operations
 
 - 211 (or equivalent) access request and server-side credentials — never `VITE_*`.
-- Tighter nearby ranking so a Gainesville ZIP is not dominated by 60–75 mile listings without explanation.
 - i18n UI only after listings carry reviewed language fields.
 - Independent review of high-stakes local records in `VERIFIED-ORGS.md`.
 

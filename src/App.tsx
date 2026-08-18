@@ -97,6 +97,11 @@ export const App: React.FC = () => {
     status: dataStatus,
     error: dataError,
     zipRecognized,
+    nextCursor,
+    loadMore,
+    loadingMore,
+    loadMoreError,
+    searchCoverage,
     coverage,
   } = useResources(RESOURCE_PROVIDER, resourceRequest, shouldSearchResources);
   const needsNationalLocation = coverage === 'national' && !location;
@@ -104,7 +109,9 @@ export const App: React.FC = () => {
   // If GPS selection fails, restore a valid non-distance sort while the
   // distance option is unavailable.
   useEffect(() => {
-    if (!location && status !== 'idle' && status !== 'locating') {
+    if (location) {
+      setSortBy((current) => (current === 'relevance' ? 'distance' : current));
+    } else if (status !== 'idle' && status !== 'locating') {
       setSortBy((current) => (current === 'distance' ? 'relevance' : current));
     }
   }, [location, status]);
@@ -228,6 +235,8 @@ export const App: React.FC = () => {
           sortBy={sortBy}
           onSortChange={setSortBy}
           totalResultsCount={needsNationalLocation ? 0 : total}
+          shownCount={needsNationalLocation ? 0 : resources.length}
+          radiusMiles={searchCoverage?.radiusMiles}
           distanceAvailable={!!location}
           availableLanguages={facets.languages}
           selectedLanguage={selectedLanguage}
@@ -264,7 +273,7 @@ export const App: React.FC = () => {
             tabIndex={-1}
             className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-main focus:outline-none"
           >
-            Help near you
+            Help near {location?.label ? `ZIP ${location.label}` : location?.source === 'gps' ? 'your location' : 'you'}
           </h2>
           <div className="inline-flex rounded-xl border border-border bg-surface p-1" role="group" aria-label="View mode">
             <button
@@ -360,6 +369,30 @@ export const App: React.FC = () => {
             ))}
           </div>
         )}
+
+        {!needsNationalLocation && filteredResources.length > 0 && nextCursor ? (
+          <div className="flex flex-col items-center gap-2">
+            <button
+              type="button"
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 py-2.5 font-display text-sm font-bold text-inverse hover:bg-primary-hover disabled:cursor-wait"
+            >
+              {loadingMore ? 'Loading more…' : 'Show more nearby listings'}
+            </button>
+            <p className="text-xs text-muted">
+              {total - filteredResources.length} more in this search
+              {typeof searchCoverage?.radiusMiles === 'number'
+                ? ` · within about ${searchCoverage.radiusMiles} miles`
+                : ''}
+            </p>
+            {loadMoreError ? (
+              <p className="text-xs font-medium text-danger" role="alert">
+                {loadMoreError}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
 
         {/* Closing hope/community note -- the brand's voice, and honest about what is free:
             Hearth itself, not every third-party organization's pricing. */}

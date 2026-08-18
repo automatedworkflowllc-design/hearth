@@ -74,32 +74,34 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onSelect }
 
   return (
     <article className={`flex h-full flex-col rounded-2xl border border-border border-l-4 ${accentClass} bg-surface p-5 shadow-sm transition-all duration-200 hover:bg-card-hover hover:shadow-md`}>
-      <span className={`font-display text-xs font-extrabold uppercase tracking-wider ${categoryClass}`}>
-        {resource.category}
-      </span>
+      <div className="flex items-start justify-between gap-3">
+        <span className={`font-display text-xs font-extrabold uppercase tracking-wider ${categoryClass}`}>
+          {resource.category}
+        </span>
+        {typeof resource.distanceMiles === 'number' && (
+          <span className="shrink-0 rounded-full bg-app px-2.5 py-1 text-xs font-bold text-main">
+            {approxDistance(resource.distanceMiles)}
+          </span>
+        )}
+      </div>
 
       <h3 className="mt-1.5 font-display text-lg font-bold text-main">{resource.name}</h3>
 
       <p className="mt-1.5 line-clamp-2 text-sm text-muted">{resource.description}</p>
 
       <div className="mt-3 flex flex-wrap gap-1.5">
-        {typeof resource.distanceMiles === 'number' && (
-          <span className="rounded-full bg-card-hover px-2.5 py-1 text-xs font-bold text-main">
-            {approxDistance(resource.distanceMiles)}
-          </span>
-        )}
         {resource.availability && (
-          <span className="rounded-full bg-card-hover px-2.5 py-1 text-xs font-bold text-main">
+          <span className="rounded-full bg-app px-2.5 py-1 text-xs font-bold text-main">
             {resource.availability}
           </span>
         )}
         {resource.languages?.map((language) => (
-          <span key={language.code} className="inline-flex items-center gap-1 rounded-full bg-card-hover px-2.5 py-1 text-xs font-bold text-main">
+          <span key={language.code} className="inline-flex items-center gap-1 rounded-full bg-app px-2.5 py-1 text-xs font-bold text-main">
             <Languages className="h-3 w-3" aria-hidden="true" /> {language.label}
           </span>
         ))}
         {resource.accessibility?.wheelchair === 'yes' && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-card-hover px-2.5 py-1 text-xs font-bold text-main">
+          <span className="inline-flex items-center gap-1 rounded-full bg-app px-2.5 py-1 text-xs font-bold text-main">
             <Accessibility className="h-3 w-3" aria-hidden="true" /> Wheelchair access documented
           </span>
         )}

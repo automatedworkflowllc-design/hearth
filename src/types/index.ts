@@ -111,6 +111,11 @@ export interface ResourceSearchRequest {
   signal?: AbortSignal;
 }
 
+export interface SearchCoverage {
+  radiusMiles: number | null;
+  sources?: string[];
+}
+
 export interface ResourceSearchResponse {
   resources: Resource[];
   total: number;
@@ -123,6 +128,7 @@ export interface ResourceSearchResponse {
    * messages to a person in need; null/undefined when no ZIP was involved.
    */
   zipRecognized?: boolean | null;
+  coverage?: SearchCoverage;
 }
 
 export interface FilterOptions {
