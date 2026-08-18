@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap } from 're
 import L from 'leaflet';
 import type { Resource } from '../types/index';
 import type { UserLocation } from '../hooks/useGeolocation';
+import { formatResourcePlace } from '../utils/place';
 
 interface ResourceMapProps {
   resources: Resource[];
@@ -89,7 +90,9 @@ export const ResourceMap: React.FC<ResourceMapProps> = ({ resources, userLocatio
               <Popup>
                 <div className="min-w-[180px]">
                   <p className="text-sm font-bold text-main">{r.name}</p>
-                  {r.address && <p className="mt-0.5 text-xs text-muted">{r.address}</p>}
+                  {formatResourcePlace(r) && (
+                    <p className="mt-0.5 text-xs text-muted">{formatResourcePlace(r)}</p>
+                  )}
                   <button
                     onClick={() => onSelect(r)}
                     className="mt-2 min-h-11 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-inverse hover:bg-primary-hover"

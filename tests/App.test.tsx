@@ -25,6 +25,7 @@ describe('App integration', () => {
     render(<App />);
     expect(await screen.findByText(RESOURCE)).toBeInTheDocument();
     expect(screen.getByText(/Showing 11 resources in the Gainesville, FL area/i)).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(/local demonstration directory/i);
     expect(screen.queryByRole('button', { name: /substance-use help/i })).not.toBeInTheDocument();
   });
 
@@ -57,6 +58,14 @@ describe('App integration', () => {
     await screen.findByText(RESOURCE);
     fireEvent.click(screen.getByRole('button', { name: /find help/i }));
     expect(screen.getByRole('heading', { name: /help near you/i })).toHaveFocus();
+  });
+
+  it('offers a location control without implying the directory is empty', async () => {
+    render(<App />);
+    await screen.findByText(RESOURCE);
+    expect(screen.getByText(/find help near you/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /search this zip/i })).toBeInTheDocument();
+    expect(screen.queryByText(/showing 0 resources/i)).not.toBeInTheDocument();
   });
 
   it('navbar search button focuses the search field (it used to be inert)', async () => {

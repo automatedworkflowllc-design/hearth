@@ -7,12 +7,15 @@ import { ResourceCard } from './components/ResourceCard';
 import { ResourceDetailModal } from './components/ResourceDetailModal';
 import { LocationControl } from './components/LocationControl';
 import { ResourceMap } from './components/ResourceMap';
+import { CoverageStrip } from './components/CoverageStrip';
+import { HowItWorks } from './components/HowItWorks';
+import { ResultsSkeleton } from './components/ResultsSkeleton';
 import { useGeolocation } from './hooks/useGeolocation';
 import { useAccessibility } from './hooks/useAccessibility';
 import { useResources } from './hooks/useResources';
 import { getConfiguredProvider } from './providers/resourceProvider';
 import type { Resource } from './types/index';
-import { AlertCircle, List as ListIcon, Map as MapIcon } from 'lucide-react';
+import { AlertCircle, List as ListIcon, Map as MapIcon, MapPin } from 'lucide-react';
 
 type ViewMode = 'list' | 'map';
 const RESULTS_HEADING_ID = 'resource-results';
@@ -95,7 +98,6 @@ export const App: React.FC = () => {
     error: dataError,
     zipRecognized,
     coverage,
-    providerLabel,
   } = useResources(RESOURCE_PROVIDER, resourceRequest, shouldSearchResources);
   const needsNationalLocation = coverage === 'national' && !location;
 
@@ -129,6 +131,13 @@ export const App: React.FC = () => {
     el.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
   }, []);
 
+  const focusLocation = useCallback(() => {
+    const el = document.getElementById('zip-input') as HTMLInputElement | null;
+    if (!el) return;
+    el.focus();
+    el.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+  }, []);
+
   const focusResults = useCallback(() => {
     const heading = document.getElementById(RESULTS_HEADING_ID);
     heading?.focus({ preventScroll: true });
@@ -154,6 +163,12 @@ export const App: React.FC = () => {
     }
     setView('list');
     requestAnimationFrame(() => {
+      const zipField = document.getElementById('zip-input');
+      if (IS_NATIONAL_DIRECTORY && zipField) {
+        zipField.focus();
+        zipField.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+        return;
+      }
       focusResults();
     });
   }, [focusResults]);
@@ -170,30 +185,12 @@ export const App: React.FC = () => {
         <Hero
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          onSearchSubmit={focusResults}
+          onSearchSubmit={needsNationalLocation ? focusLocation : focusResults}
           onCategorySelect={showCategory}
           nationalDirectory={IS_NATIONAL_DIRECTORY}
         />
 
-        {coverage === 'local-demo' ? (
-          <div role="alert" className="bg-card-hover border-l-4 border-accent text-main rounded-xl px-4 py-3 text-sm">
-            <strong>Local demonstration directory.</strong> These are real, recently-reviewed Gainesville, FL
-            resources shown while the national data connection is being completed. The interface is national-ready,
-            but this build must not imply coverage it does not yet have. For current help, call{' '}
-            <a className="font-semibold underline" href="tel:211">211</a> (community services) or{' '}
-            <a className="font-semibold underline" href="tel:988">988</a> (crisis &amp; suicide lifeline).
-          </div>
-        ) : (
-          <div role="status" className="bg-card-hover border-l-4 border-accent text-main rounded-xl px-4 py-3 text-sm">
-            Searching <strong>{providerLabel}</strong> across food pantries, community meals,
-            free summer meals for kids, medical care, and behavioral-health services. Use the
-            need filters for cleaner results. For
-            shelter, housing, legal help, or another category not yet covered nationally, dial{' '}
-            <a className="font-semibold underline" href="tel:211">211</a>.
-          </div>
-        )}
-
-        {/* Location control (opt-in geolocation / on-device ZIP) */}
+        {/* Location is the national search gate — keep it above filters so "0 resources" is never the first impression. */}
         <LocationControl
           location={location}
           status={status}
@@ -204,6 +201,10 @@ export const App: React.FC = () => {
           nationalCoverage={coverage === 'national'}
           onClear={handleClearLocation}
         />
+
+        <CoverageStrip nationalDirectory={coverage === 'national'} />
+
+        {needsNationalLocation && <HowItWorks />}
 
         {/* Category + sort controls (search itself lives in the Hero). */}
         <FilterPanel
@@ -234,6 +235,7 @@ export const App: React.FC = () => {
           wheelchairFilterAvailable={facets.hasWheelchairData}
           wheelchairOnly={wheelchairOnly}
           onWheelchairOnlyChange={setWheelchairOnly}
+          awaitingLocation={needsNationalLocation}
           resultsContext={
             coverage === 'national'
               ? 'from national food, medical, and behavioral-health directories'
@@ -277,6 +279,7 @@ export const App: React.FC = () => {
             <button
               onClick={() => setView('map')}
               aria-pressed={view === 'map'}
+              disabled={needsNationalLocation || filteredResources.length === 0}
               className={`inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-1.5 font-display text-xs font-bold transition ${
                 view === 'map' ? 'bg-primary text-inverse' : 'text-muted hover:bg-card-hover'
               }`}
@@ -289,13 +292,7 @@ export const App: React.FC = () => {
         {/* Results -- loading/error (from the ResourceProvider async boundary) first, then the
             empty state, which wins in BOTH views so the 211 fallback is never lost. */}
         {dataStatus === 'loading' && resources.length === 0 ? (
-          // Full-panel loading ONLY when there is nothing to show yet. During a
-          // refinement (new keystroke, filter change) the previous list stays
-          // visible instead of flashing away -- the hook keeps prior results
-          // until the new page resolves.
-          <div className="bg-surface rounded-2xl p-12 text-center border border-border shadow-sm">
-            <p className="text-muted text-sm" role="status">Loading resources…</p>
-          </div>
+          <ResultsSkeleton />
         ) : dataStatus === 'error' ? (
           <div role="alert" className="bg-surface rounded-2xl p-12 text-center border border-border shadow-sm">
             <h2 className="font-display text-lg font-bold text-main mb-1">Couldn't load the directory</h2>
@@ -305,17 +302,32 @@ export const App: React.FC = () => {
             </p>
           </div>
         ) : needsNationalLocation ? (
-          <div className="bg-surface rounded-2xl p-12 text-center border border-border shadow-sm">
-            <MapIcon className="w-12 h-12 text-muted mx-auto mb-3" aria-hidden="true" />
-            <h2 className="font-display text-lg font-bold text-main mb-1">Choose a location</h2>
-            <p className="text-muted text-sm max-w-md mx-auto">
-              Enter a ZIP code or opt into your device location to find nearby services.
-              Your search location is not stored by Hearth.
+          <div className="rounded-2xl border border-border bg-surface p-8 text-center shadow-sm sm:p-12">
+            <MapPin className="mx-auto mb-3 h-12 w-12 text-primary" aria-hidden="true" />
+            <h3 className="mb-1 font-display text-lg font-bold text-main">Where should we look?</h3>
+            <p className="mx-auto mb-4 max-w-md text-sm text-muted">
+              Enter a ZIP code above or use your device location to see nearby food, medical,
+              and behavioral-health listings. Your search location is not stored by Hearth.
             </p>
+            <div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
+              <button
+                type="button"
+                onClick={focusLocation}
+                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-4 py-2.5 font-display text-xs font-bold text-inverse hover:bg-primary-hover"
+              >
+                Enter a ZIP code
+              </button>
+              <a
+                href="tel:211"
+                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border px-4 py-2.5 font-display text-xs font-bold text-primary hover:bg-card-hover"
+              >
+                Or call 211 now
+              </a>
+            </div>
           </div>
         ) : filteredResources.length === 0 ? (
           <div className="bg-surface rounded-2xl p-12 text-center border border-border shadow-sm">
-            <AlertCircle className="w-12 h-12 text-muted mx-auto mb-3" />
+            <AlertCircle className="mx-auto mb-3 h-12 w-12 text-muted" aria-hidden="true" />
             <h2 className="font-display text-lg font-bold text-main mb-1">
               {zipRecognized === false
                 ? "We don't recognize that ZIP code"
@@ -356,8 +368,8 @@ export const App: React.FC = () => {
             Asking for help is how a community takes care of its own.
           </p>
           <p className="mt-3 text-sm text-muted max-w-2xl">
-            Always free to search · no account · no tracking. Each listing shows when it was last
-            reviewed.
+            Free to search · no account · no advertising. Each listing shows its source and
+            when it was last reviewed. Call before traveling.
           </p>
         </section>
 

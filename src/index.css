@@ -137,6 +137,15 @@ footer :focus-visible {
   outline-color: var(--text-on-nav);
 }
 
+/* Sticky nav offsets in-page focus/scroll targets so they are not hidden. */
+#main-content,
+#location-search,
+#zip-input,
+#directory-coverage,
+#resource-results {
+  scroll-margin-top: 5.5rem;
+}
+
 /* The amber "hearth glow" behind the hero headline -- decorative, non-text, aria-hidden in
    markup. Suppressed entirely in high-contrast: a soft blurred glow has no place in a mode
    whose whole point is stark maximum contrast. */

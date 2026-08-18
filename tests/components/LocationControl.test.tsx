@@ -19,7 +19,7 @@ describe('LocationControl ZIP fallback (on-device, no network)', () => {
     render(<LocationControl {...baseProps} onSetZip={onSetZip} />);
 
     fireEvent.change(screen.getByLabelText(/zip code/i), { target: { value: '32601' } });
-    fireEvent.click(screen.getByRole('button', { name: /^set$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /search this zip/i }));
 
     expect(onSetZip).toHaveBeenCalledTimes(1);
     const [coords, zip] = onSetZip.mock.calls[0];
@@ -33,7 +33,7 @@ describe('LocationControl ZIP fallback (on-device, no network)', () => {
     render(<LocationControl {...baseProps} onSetZip={onSetZip} />);
 
     fireEvent.change(screen.getByLabelText(/zip code/i), { target: { value: '90210' } });
-    fireEvent.click(screen.getByRole('button', { name: /^set$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /search this zip/i }));
 
     expect(onSetZip).not.toHaveBeenCalled();
     expect(screen.getByText(/outside our Gainesville-area demo coverage/i)).toBeInTheDocument();
@@ -52,7 +52,7 @@ describe('LocationControl ZIP fallback (on-device, no network)', () => {
     );
 
     fireEvent.change(screen.getByLabelText(/zip code/i), { target: { value: '90210' } });
-    fireEvent.click(screen.getByRole('button', { name: /^set$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /search this zip/i }));
 
     expect(onSetPostalCode).toHaveBeenCalledWith('90210');
     expect(onSetZip).not.toHaveBeenCalled();

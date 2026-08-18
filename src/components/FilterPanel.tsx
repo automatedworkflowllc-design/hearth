@@ -16,6 +16,7 @@ interface FilterPanelProps {
   onWheelchairOnlyChange?: (enabled: boolean) => void;
   resultsContext?: string;
   availableCategoryIds?: string[];
+  awaitingLocation?: boolean;
 }
 
 // Plain text labels: the emoji that used to prefix these rendered inconsistently across the
@@ -50,6 +51,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   onWheelchairOnlyChange,
   resultsContext = 'in the Gainesville, FL area',
   availableCategoryIds,
+  awaitingLocation = false,
 }) => {
   const hasSupportedAdvancedFilters =
     availableLanguages.length > 0 || wheelchairFilterAvailable;
@@ -121,7 +123,9 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
       {/* Filter Stats & Sort */}
       <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3 border-t border-border text-xs text-muted">
         <span className="font-semibold text-main">
-          Showing {totalResultsCount} resource{totalResultsCount === 1 ? '' : 's'} {resultsContext}
+          {awaitingLocation
+            ? `Enter a ZIP or use your location to search ${resultsContext}`
+            : `Showing ${totalResultsCount} resource${totalResultsCount === 1 ? '' : 's'} ${resultsContext}`}
         </span>
 
         <div className="flex items-center gap-2">

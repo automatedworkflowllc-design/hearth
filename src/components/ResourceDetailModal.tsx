@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { getResourceContacts } from '../utils/contact';
 import { getReviewState } from '../services/dataQuality';
+import { formatResourcePlace } from '../utils/place';
 
 interface ResourceDetailModalProps {
   resource: Resource | null;
@@ -116,6 +117,7 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resour
   const contacts = getResourceContacts(resource);
   const reviewDate = resource.review?.reviewedAt ?? resource.lastVerified;
   const reviewState = getReviewState(resource);
+  const place = formatResourcePlace(resource);
 
   return (
     <div
@@ -160,12 +162,12 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resour
         </p>
 
         <div className="mb-6 space-y-4 text-sm text-main">
-          {resource.address && (
+          {place && (
             <div className="flex items-start gap-3">
               <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
               <div>
                 <strong className="block font-semibold text-main">Address</strong>
-                <span>{resource.address}</span>
+                <span>{place}</span>
               </div>
             </div>
           )}

@@ -73,6 +73,8 @@ The interface does not translate missing metadata into a claim. Details that can
 carry “call before traveling” guidance, and every detail view has an account-free correction link.
 
 The current local source record is [VERIFIED-ORGS.md](./VERIFIED-ORGS.md).
+The working backlog is [ROADMAP.md](./ROADMAP.md). How to contribute is in
+[CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Tech
 

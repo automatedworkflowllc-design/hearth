@@ -73,7 +73,7 @@ export const Hero: React.FC<HeroProps> = ({
 
           <p className="mt-4 max-w-xl text-base text-muted sm:text-lg">
             {nationalDirectory
-              ? 'Find food pantries, community meals, free summer meals for kids, medical care, mental-health support, substance-use treatment, and detox services from national directories.'
+              ? 'Find food pantries, community meals, free summer meals for kids, medical care, mental-health support, substance-use treatment, and detox services from national directories. Enter a ZIP below to see what is nearby.'
               : 'Find food, a safe place to stay, health care, and legal help from real, recently-reviewed organizations near you.'}{' '}
             <span className="font-serif italic text-brand">You belong here.</span>
           </p>
@@ -118,11 +118,11 @@ export const Hero: React.FC<HeroProps> = ({
           <p id="quick-needs-title" className="font-display text-sm font-extrabold text-main">
             What do you need right now?
           </p>
-          <p className="mt-1 text-xs text-muted">
-            {nationalDirectory
-              ? 'Choose a need, then enter your location to see relevant services.'
-              : 'Choose a starting point. You can change it anytime.'}
-          </p>
+            <p className="mt-1 text-xs leading-relaxed text-muted">
+              {nationalDirectory
+                ? 'Choose a need, then enter your ZIP below to see relevant services.'
+                : 'Choose a starting point. You can change it anytime.'}
+            </p>
           <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
             {displayedQuickNeeds.map(({ category, label, icon: Icon }) => (
               <button

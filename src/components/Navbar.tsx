@@ -12,7 +12,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ onSearchClick, accessibility }) => {
   return (
     <nav
-      className="bg-nav text-on-nav shadow-md border-b border-nav-hover"
+      className="sticky top-0 z-40 bg-nav text-on-nav shadow-md border-b border-nav-hover"
       aria-label="Main Navigation"
     >
       <div className="max-w-7xl mx-auto flex min-h-16 flex-wrap items-center gap-y-2 px-4 py-2 sm:h-16 sm:flex-nowrap sm:px-6 sm:py-0 lg:px-8">
