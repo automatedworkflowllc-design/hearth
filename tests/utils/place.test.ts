@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatResourcePlace } from '../../src/utils/place';
+import { formatApproxDistance, formatResourceCity, formatResourcePlace } from '../../src/utils/place';
 import type { Resource } from '../../src/types';
 
 function resource(overrides: Partial<Resource> = {}): Resource {
@@ -47,5 +47,23 @@ describe('formatResourcePlace', () => {
         })
       )
     ).toBe('Gainesville, FL 32627');
+  });
+});
+
+describe('card scanning helpers', () => {
+  it('shows city and state without the street', () => {
+    expect(
+      formatResourceCity(
+        resource({
+          address: '120 King St',
+          location: { city: 'Jacksonville', state: 'FL', zipCode: '32204' },
+        })
+      )
+    ).toBe('Jacksonville, FL');
+  });
+
+  it('keeps ZIP-centroid distances approximate', () => {
+    expect(formatApproxDistance(0.14)).toBe('under 1 mi');
+    expect(formatApproxDistance(74.22)).toBe('~74 mi');
   });
 });

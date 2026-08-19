@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { MapPin, LocateFixed, X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { MapPin, LocateFixed, X, Link2 } from 'lucide-react';
 import type { UserLocation, GeoStatus } from '../hooks/useGeolocation';
 import { zipToCoords } from '../data/gainesvilleZips';
 
@@ -12,6 +12,7 @@ interface LocationControlProps {
   onSetPostalCode?: (zip: string) => void;
   nationalCoverage?: boolean;
   onClear: () => void;
+  shareHref?: string | null;
 }
 
 export const LocationControl: React.FC<LocationControlProps> = ({
@@ -23,9 +24,17 @@ export const LocationControl: React.FC<LocationControlProps> = ({
   onSetPostalCode,
   nationalCoverage = false,
   onClear,
+  shareHref = null,
 }) => {
   const [zip, setZip] = useState('');
   const [zipError, setZipError] = useState<string | null>(null);
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
+
+  useEffect(() => {
+    if (copyState !== 'copied') return;
+    const timer = window.setTimeout(() => setCopyState('idle'), 2500);
+    return () => window.clearTimeout(timer);
+  }, [copyState]);
 
   const submitZip = (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,12 +68,41 @@ export const LocationControl: React.FC<LocationControlProps> = ({
           <MapPin className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
           Showing nearby results from {where}.
         </span>
-        <button
-          onClick={onClear}
-          className="inline-flex min-h-11 items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold text-primary hover:bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
-        >
-          <X className="h-3.5 w-3.5" aria-hidden="true" /> Change location
-        </button>
+        <div className="flex flex-wrap items-center gap-1">
+          {shareHref ? (
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(shareHref);
+                  setCopyState('copied');
+                } catch {
+                  setCopyState('failed');
+                }
+              }}
+              className="inline-flex min-h-11 items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold text-primary hover:bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
+              {copyState === 'copied' ? 'Link copied' : 'Copy link'}
+            </button>
+          ) : null}
+          <button
+            onClick={onClear}
+            className="inline-flex min-h-11 items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold text-primary hover:bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <X className="h-3.5 w-3.5" aria-hidden="true" /> Change location
+          </button>
+        </div>
+        {copyState === 'copied' ? (
+          <p className="w-full text-xs text-muted" role="status">
+            Copied a page link that includes this ZIP. Do not send it from a device you need to keep private.
+          </p>
+        ) : null}
+        {copyState === 'failed' ? (
+          <p className="w-full text-xs font-medium text-danger" role="alert">
+            Could not copy the link from this browser.
+          </p>
+        ) : null}
       </div>
     );
   }
@@ -98,8 +136,10 @@ export const LocationControl: React.FC<LocationControlProps> = ({
               id="zip-input"
               inputMode="numeric"
               autoComplete="postal-code"
+              enterKeyHint="search"
+              maxLength={5}
               value={zip}
-              onChange={(e) => setZip(e.target.value)}
+              onChange={(e) => setZip(e.target.value.replace(/\D/g, '').slice(0, 5))}
               placeholder="e.g. 32601"
               className="min-h-11 w-full rounded-xl border border-border-input bg-app px-3.5 py-2 text-sm font-medium text-main placeholder:text-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
             />

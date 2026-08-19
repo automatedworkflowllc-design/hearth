@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { getResourceContacts } from '../utils/contact';
 import { getReviewState } from '../services/dataQuality';
-import { formatResourcePlace } from '../utils/place';
+import { formatApproxDistance, formatResourcePlace } from '../utils/place';
 
 interface ResourceDetailModalProps {
   resource: Resource | null;
@@ -121,7 +121,7 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resour
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
+      className="hearth-scrim fixed inset-0 z-50 flex items-center justify-center p-4"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -156,6 +156,11 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resour
         <h2 id={titleId} className="mb-3 font-display text-2xl font-extrabold text-main">
           {resource.name}
         </h2>
+        {typeof resource.distanceMiles === 'number' ? (
+          <p className="mb-3 text-sm font-semibold text-main">
+            {formatApproxDistance(resource.distanceMiles)} from the location you chose
+          </p>
+        ) : null}
 
         <p className="mb-6 rounded-xl border border-border bg-app p-4 text-sm leading-relaxed text-main">
           {resource.description}
@@ -183,7 +188,7 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ resour
 
           {resource.eligibility && (
             <div className="flex items-start gap-3">
-              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#35684a]" aria-hidden="true" />
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
               <div>
                 <strong className="block font-semibold text-main">Eligibility</strong>
                 <span className="text-muted">{resource.eligibility}</span>

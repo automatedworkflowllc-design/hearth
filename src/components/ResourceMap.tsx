@@ -80,7 +80,13 @@ export const ResourceMap: React.FC<ResourceMapProps> = ({ resources, userLocatio
             <CircleMarker
               center={[userLocation.lat as number, userLocation.lng as number]}
               radius={9}
-              pathOptions={{ color: '#ffffff', weight: 2, fillColor: '#059669', fillOpacity: 1 }}
+              pathOptions={{
+                className: 'hearth-user-marker',
+                color: '#ffffff',
+                weight: 2,
+                fillColor: '#059669',
+                fillOpacity: 1,
+              }}
             >
               <Popup>You are here ({userLocation.source === 'gps' ? 'your location' : `ZIP ${userLocation.label}`})</Popup>
             </CircleMarker>

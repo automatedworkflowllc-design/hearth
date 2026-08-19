@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import Layout from './components/Layout';
 import { Hero, SEARCH_INPUT_ID } from './components/Hero';
 import { SafetyBar } from './components/SafetyBar';
@@ -15,6 +15,9 @@ import { useAccessibility } from './hooks/useAccessibility';
 import { useResources } from './hooks/useResources';
 import { getConfiguredProvider } from './providers/resourceProvider';
 import type { Resource } from './types/index';
+import { zipToCoords } from './data/gainesvilleZips';
+import { directorySearchHref, parseDirectorySearchParams } from './utils/searchParams';
+import { prefersReducedMotion } from './utils/place';
 import { AlertCircle, List as ListIcon, Map as MapIcon, MapPin } from 'lucide-react';
 
 type ViewMode = 'list' | 'map';
@@ -51,6 +54,7 @@ export const App: React.FC = () => {
 
   const { location, status, error, requestGps, setFromZip, setFromPostalCode, clear } = useGeolocation();
   const a11y = useAccessibility();
+  const focusResultsAfterSearch = useRef(false);
 
   // Set the default distance sort in the same user action that starts location
   // selection. React batches these updates, so the national provider never
@@ -58,16 +62,49 @@ export const App: React.FC = () => {
   const prepareDistanceSort = useCallback(() => {
     setSortBy((current) => (current === 'relevance' ? 'distance' : current));
   }, []);
+
+  const focusSearch = useCallback(() => {
+    const el = document.getElementById(SEARCH_INPUT_ID) as HTMLInputElement | null;
+    if (!el) return;
+    el.focus();
+    el.scrollIntoView?.({
+      block: 'center',
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    });
+  }, []);
+
+  const focusLocation = useCallback(() => {
+    const el = document.getElementById('zip-input') as HTMLInputElement | null;
+    if (!el) return;
+    el.focus();
+    el.scrollIntoView?.({
+      block: 'center',
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    });
+  }, []);
+
+  const focusResults = useCallback(() => {
+    const heading = document.getElementById(RESULTS_HEADING_ID);
+    heading?.focus({ preventScroll: true });
+    heading?.scrollIntoView?.({
+      block: 'start',
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    });
+  }, []);
+
   const handleRequestGps = useCallback(() => {
     prepareDistanceSort();
+    focusResultsAfterSearch.current = true;
     requestGps();
   }, [prepareDistanceSort, requestGps]);
   const handleSetFromZip = useCallback((coords: { lat: number; lng: number }, zip: string) => {
     prepareDistanceSort();
+    focusResultsAfterSearch.current = true;
     setFromZip(coords, zip);
   }, [prepareDistanceSort, setFromZip]);
   const handleSetFromPostalCode = useCallback((zip: string) => {
     prepareDistanceSort();
+    focusResultsAfterSearch.current = true;
     setFromPostalCode(zip);
   }, [prepareDistanceSort, setFromPostalCode]);
 
@@ -123,33 +160,32 @@ export const App: React.FC = () => {
     setSortBy((s) => (s === 'distance' ? 'relevance' : s));
   };
 
+  useEffect(() => {
+    const { zip, need } = parseDirectorySearchParams(window.location.search);
+    if (need && IS_NATIONAL_DIRECTORY) setSelectedNeed(need);
+    if (!zip) return;
+    prepareDistanceSort();
+    if (IS_NATIONAL_DIRECTORY) {
+      setFromPostalCode(zip);
+      return;
+    }
+    const coords = zipToCoords(zip);
+    if (coords) setFromZip(coords, zip);
+    // Apply a shared ?zip= once on entry. Do not write the URL automatically —
+    // a ZIP in history is a privacy cost, so copying a link stays explicit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!focusResultsAfterSearch.current) return;
+    if (!location || dataStatus === 'loading') return;
+    focusResultsAfterSearch.current = false;
+    focusResults();
+  }, [location, dataStatus, focusResults]);
+
   // Stable identity so the modal's focus-trap/scroll-lock effect runs on open/close only,
   // not on every re-render of App (e.g. typing in search).
   const closeModal = useCallback(() => setSelectedResource(null), []);
-
-  // The navbar's "Search Resources" button was inert -- App never passed a handler, so clicking
-  // it did nothing. It now moves focus to the hero's search field.
-  const focusSearch = useCallback(() => {
-    const el = document.getElementById(SEARCH_INPUT_ID) as HTMLInputElement | null;
-    if (!el) return;
-    // Focus FIRST: it is the behavior that matters, and scrollIntoView is not universally
-    // available -- calling it first meant one throw silently swallowed the focus entirely.
-    el.focus();
-    el.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
-  }, []);
-
-  const focusLocation = useCallback(() => {
-    const el = document.getElementById('zip-input') as HTMLInputElement | null;
-    if (!el) return;
-    el.focus();
-    el.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
-  }, []);
-
-  const focusResults = useCallback(() => {
-    const heading = document.getElementById(RESULTS_HEADING_ID);
-    heading?.focus({ preventScroll: true });
-    heading?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
-  }, []);
 
   const showCategory = useCallback((category: string) => {
     setSearchQuery('');
@@ -173,7 +209,10 @@ export const App: React.FC = () => {
       const zipField = document.getElementById('zip-input');
       if (IS_NATIONAL_DIRECTORY && zipField) {
         zipField.focus();
-        zipField.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+        zipField.scrollIntoView?.({
+          block: 'center',
+          behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+        });
         return;
       }
       focusResults();
@@ -207,6 +246,14 @@ export const App: React.FC = () => {
           onSetPostalCode={handleSetFromPostalCode}
           nationalCoverage={coverage === 'national'}
           onClear={handleClearLocation}
+          shareHref={
+            location?.source === 'zip' && location.label
+              ? directorySearchHref(
+                  location.label,
+                  IS_NATIONAL_DIRECTORY ? selectedNeed : undefined
+                )
+              : null
+          }
         />
 
         <CoverageStrip nationalDirectory={coverage === 'national'} />
@@ -265,8 +312,15 @@ export const App: React.FC = () => {
           }
         />
 
-        {/* Results heading -- also keeps the document outline sequential (h1 hero -> h2 here ->
-            h3 per card); without it the card headings jumped straight from h1 to h3. */}
+        <div className="sr-only" aria-live="polite" aria-atomic="true">
+          {needsNationalLocation
+            ? 'Enter a ZIP code or use your location to search the national directory.'
+            : dataStatus === 'loading' && resources.length === 0
+              ? 'Loading resources.'
+              : dataStatus === 'ready' && resources.length > 0
+                ? `Showing ${resources.length} of ${total} resources.`
+                : ''}
+        </div>
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <h2
             id={RESULTS_HEADING_ID}
@@ -297,6 +351,12 @@ export const App: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {dataStatus === 'loading' && resources.length > 0 ? (
+          <p className="text-sm text-muted" role="status">
+            Updating results…
+          </p>
+        ) : null}
 
         {/* Results -- loading/error (from the ResourceProvider async boundary) first, then the
             empty state, which wins in BOTH views so the 211 fallback is never lost. */}
@@ -381,7 +441,7 @@ export const App: React.FC = () => {
               {loadingMore ? 'Loading more…' : 'Show more nearby listings'}
             </button>
             <p className="text-xs text-muted">
-              {total - filteredResources.length} more in this search
+              {Math.max(0, total - filteredResources.length)} more in this search
               {typeof searchCoverage?.radiusMiles === 'number'
                 ? ` · within about ${searchCoverage.radiusMiles} miles`
                 : ''}

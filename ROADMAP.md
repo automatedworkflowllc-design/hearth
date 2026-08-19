@@ -8,6 +8,7 @@ Directory health: <https://hearth-directory.automaticworkflowllc.workers.dev/hea
 ## Now — product quality
 
 - Location-first national search (no “0 resources” before a ZIP).
+- Shareable `?zip=` links (opt-in copy; not written into history automatically).
 - Honest pagination: show page size vs total, and load more via the directory cursor.
 - Nearby default order is distance, not the alphabet, when a ZIP is set.
 - Preserve accessibility: high-contrast, text size, Quick Exit, crisis numbers without JavaScript.

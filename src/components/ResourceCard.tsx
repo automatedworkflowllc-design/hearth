@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { getPrimaryContact } from '../utils/contact';
 import { getReviewState } from '../services/dataQuality';
-import { formatResourcePlace } from '../utils/place';
+import { formatApproxDistance, formatResourceCity, formatResourcePlace } from '../utils/place';
 
 interface ResourceCardProps {
   resource: Resource;
@@ -33,11 +33,6 @@ const categoryAccents: Record<string, string> = {
   legal: 'border-l-cat-legal',
   support: 'border-l-cat-support',
 };
-
-function approxDistance(miles: number): string {
-  if (miles < 1) return 'under 1 mi';
-  return `~${Math.round(miles)} mi`;
-}
 
 function formatReviewDate(isoDate: string): string {
   const parsed = new Date(`${isoDate}T00:00:00Z`);
@@ -80,12 +75,15 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onSelect }
         </span>
         {typeof resource.distanceMiles === 'number' && (
           <span className="shrink-0 rounded-full bg-app px-2.5 py-1 text-xs font-bold text-main">
-            {approxDistance(resource.distanceMiles)}
+            {formatApproxDistance(resource.distanceMiles)}
           </span>
         )}
       </div>
 
       <h3 className="mt-1.5 font-display text-lg font-bold text-main">{resource.name}</h3>
+      {formatResourceCity(resource) ? (
+        <p className="mt-0.5 text-sm font-medium text-main">{formatResourceCity(resource)}</p>
+      ) : null}
 
       <p className="mt-1.5 line-clamp-2 text-sm text-muted">{resource.description}</p>
 

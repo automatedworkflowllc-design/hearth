@@ -23,3 +23,22 @@ export function formatResourcePlace(resource: Resource): string | undefined {
 
   return address || place || undefined;
 }
+
+/** Short city/state line for card scanning — not a full mailing address. */
+export function formatResourceCity(resource: Resource): string | undefined {
+  const city = resource.location?.city?.trim();
+  const state = resource.location?.state?.trim();
+  const line = [city, state].filter(Boolean).join(', ');
+  return line || undefined;
+}
+
+/** Distances from ZIP centroids are approximate; do not show false precision. */
+export function formatApproxDistance(miles: number): string {
+  if (miles < 1) return 'under 1 mi';
+  return `~${Math.round(miles)} mi`;
+}
+
+export function prefersReducedMotion(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
