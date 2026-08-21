@@ -105,9 +105,23 @@ export function createNationalApiProvider(apiBaseUrl: string): ResourceProvider 
         resources: payload.resources,
         total: typeof payload.total === 'number' ? payload.total : payload.resources.length,
         facets: payload.facets ?? { languages: [], hasWheelchairData: false },
-        nextCursor: payload.nextCursor,
+        nextCursor: typeof payload.nextCursor === 'string' && payload.nextCursor
+          ? payload.nextCursor
+          : undefined,
         generatedAt: payload.generatedAt,
         zipRecognized: typeof payload.zipRecognized === 'boolean' ? payload.zipRecognized : null,
+        coverage:
+          payload.coverage && typeof payload.coverage === 'object'
+            ? {
+                radiusMiles:
+                  typeof payload.coverage.radiusMiles === 'number'
+                    ? payload.coverage.radiusMiles
+                    : null,
+                sources: Array.isArray(payload.coverage.sources)
+                  ? payload.coverage.sources.filter((source): source is string => typeof source === 'string')
+                  : undefined,
+              }
+            : undefined,
       };
     },
   };

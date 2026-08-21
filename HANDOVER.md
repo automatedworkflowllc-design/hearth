@@ -1,5 +1,13 @@
 # Hearth — handover
 
+> **Takeover note (2026-08-18):** Website UX, visual hierarchy, and project-management
+> scaffolding (roadmap, issue/PR templates, contributing guide) were added on top of the
+> national directory that was already live. The live site is
+> <https://automatedworkflowllc-design.github.io/hearth/>; the directory service health
+> endpoint is <https://hearth-directory.automaticworkflowllc.workers.dev/health>. Current
+> backlog lives in [ROADMAP.md](./ROADMAP.md). The original snapshot below remains useful
+> history; test counts and “unpushed commits” are superseded.
+>
 > **Post-handover update (2026-07-25):** The provider seam is now query-based rather than
 > load-all, the frontend includes a national proxy adapter, and records have structured contacts,
 > provenance, review states, correction links, and conditional access/language metadata. The

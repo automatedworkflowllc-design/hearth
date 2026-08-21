@@ -16,6 +16,9 @@ interface FilterPanelProps {
   onWheelchairOnlyChange?: (enabled: boolean) => void;
   resultsContext?: string;
   availableCategoryIds?: string[];
+  awaitingLocation?: boolean;
+  shownCount?: number;
+  radiusMiles?: number | null;
 }
 
 // Plain text labels: the emoji that used to prefix these rendered inconsistently across the
@@ -50,6 +53,9 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   onWheelchairOnlyChange,
   resultsContext = 'in the Gainesville, FL area',
   availableCategoryIds,
+  awaitingLocation = false,
+  shownCount,
+  radiusMiles,
 }) => {
   const hasSupportedAdvancedFilters =
     availableLanguages.length > 0 || wheelchairFilterAvailable;
@@ -121,7 +127,16 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
       {/* Filter Stats & Sort */}
       <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3 border-t border-border text-xs text-muted">
         <span className="font-semibold text-main">
-          Showing {totalResultsCount} resource{totalResultsCount === 1 ? '' : 's'} {resultsContext}
+          {awaitingLocation
+            ? `Enter a ZIP or use your location to search ${resultsContext}`
+            : shownCount != null && shownCount < totalResultsCount
+              ? `Showing ${shownCount} of ${totalResultsCount} resource${totalResultsCount === 1 ? '' : 's'} ${resultsContext}`
+              : `Showing ${totalResultsCount} resource${totalResultsCount === 1 ? '' : 's'} ${resultsContext}`}
+          {!awaitingLocation && typeof radiusMiles === 'number' ? (
+            <span className="mt-1 block font-medium text-muted">
+              Nearby means within about {radiusMiles} miles.
+            </span>
+          ) : null}
         </span>
 
         <div className="flex items-center gap-2">
@@ -133,9 +148,17 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             aria-label="Sort resources"
             className="min-h-11 bg-app border border-border text-main rounded-lg px-2.5 py-1.5 text-xs font-semibold"
           >
-            <option value="relevance">Relevance</option>
-            <option value="name">Name (A-Z)</option>
-            {distanceAvailable && <option value="distance">Distance (nearest)</option>}
+            {distanceAvailable ? (
+              <>
+                <option value="distance">Distance (nearest)</option>
+                <option value="name">Name (A-Z)</option>
+              </>
+            ) : (
+              <>
+                <option value="relevance">Relevance</option>
+                <option value="name">Name (A-Z)</option>
+              </>
+            )}
           </select>
         </div>
       </div>

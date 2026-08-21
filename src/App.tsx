@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import Layout from './components/Layout';
 import { Hero, SEARCH_INPUT_ID } from './components/Hero';
 import { SafetyBar } from './components/SafetyBar';
@@ -7,12 +7,18 @@ import { ResourceCard } from './components/ResourceCard';
 import { ResourceDetailModal } from './components/ResourceDetailModal';
 import { LocationControl } from './components/LocationControl';
 import { ResourceMap } from './components/ResourceMap';
+import { CoverageStrip } from './components/CoverageStrip';
+import { HowItWorks } from './components/HowItWorks';
+import { ResultsSkeleton } from './components/ResultsSkeleton';
 import { useGeolocation } from './hooks/useGeolocation';
 import { useAccessibility } from './hooks/useAccessibility';
 import { useResources } from './hooks/useResources';
 import { getConfiguredProvider } from './providers/resourceProvider';
 import type { Resource } from './types/index';
-import { AlertCircle, List as ListIcon, Map as MapIcon } from 'lucide-react';
+import { zipToCoords } from './data/gainesvilleZips';
+import { directorySearchHref, parseDirectorySearchParams } from './utils/searchParams';
+import { prefersReducedMotion } from './utils/place';
+import { AlertCircle, List as ListIcon, Map as MapIcon, MapPin } from 'lucide-react';
 
 type ViewMode = 'list' | 'map';
 const RESULTS_HEADING_ID = 'resource-results';
@@ -48,6 +54,7 @@ export const App: React.FC = () => {
 
   const { location, status, error, requestGps, setFromZip, setFromPostalCode, clear } = useGeolocation();
   const a11y = useAccessibility();
+  const focusResultsAfterSearch = useRef(false);
 
   // Set the default distance sort in the same user action that starts location
   // selection. React batches these updates, so the national provider never
@@ -55,16 +62,49 @@ export const App: React.FC = () => {
   const prepareDistanceSort = useCallback(() => {
     setSortBy((current) => (current === 'relevance' ? 'distance' : current));
   }, []);
+
+  const focusSearch = useCallback(() => {
+    const el = document.getElementById(SEARCH_INPUT_ID) as HTMLInputElement | null;
+    if (!el) return;
+    el.focus();
+    el.scrollIntoView?.({
+      block: 'center',
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    });
+  }, []);
+
+  const focusLocation = useCallback(() => {
+    const el = document.getElementById('zip-input') as HTMLInputElement | null;
+    if (!el) return;
+    el.focus();
+    el.scrollIntoView?.({
+      block: 'center',
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    });
+  }, []);
+
+  const focusResults = useCallback(() => {
+    const heading = document.getElementById(RESULTS_HEADING_ID);
+    heading?.focus({ preventScroll: true });
+    heading?.scrollIntoView?.({
+      block: 'start',
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    });
+  }, []);
+
   const handleRequestGps = useCallback(() => {
     prepareDistanceSort();
+    focusResultsAfterSearch.current = true;
     requestGps();
   }, [prepareDistanceSort, requestGps]);
   const handleSetFromZip = useCallback((coords: { lat: number; lng: number }, zip: string) => {
     prepareDistanceSort();
+    focusResultsAfterSearch.current = true;
     setFromZip(coords, zip);
   }, [prepareDistanceSort, setFromZip]);
   const handleSetFromPostalCode = useCallback((zip: string) => {
     prepareDistanceSort();
+    focusResultsAfterSearch.current = true;
     setFromPostalCode(zip);
   }, [prepareDistanceSort, setFromPostalCode]);
 
@@ -94,15 +134,21 @@ export const App: React.FC = () => {
     status: dataStatus,
     error: dataError,
     zipRecognized,
+    nextCursor,
+    loadMore,
+    loadingMore,
+    loadMoreError,
+    searchCoverage,
     coverage,
-    providerLabel,
   } = useResources(RESOURCE_PROVIDER, resourceRequest, shouldSearchResources);
   const needsNationalLocation = coverage === 'national' && !location;
 
   // If GPS selection fails, restore a valid non-distance sort while the
   // distance option is unavailable.
   useEffect(() => {
-    if (!location && status !== 'idle' && status !== 'locating') {
+    if (location) {
+      setSortBy((current) => (current === 'relevance' ? 'distance' : current));
+    } else if (status !== 'idle' && status !== 'locating') {
       setSortBy((current) => (current === 'distance' ? 'relevance' : current));
     }
   }, [location, status]);
@@ -114,26 +160,32 @@ export const App: React.FC = () => {
     setSortBy((s) => (s === 'distance' ? 'relevance' : s));
   };
 
+  useEffect(() => {
+    const { zip, need } = parseDirectorySearchParams(window.location.search);
+    if (need && IS_NATIONAL_DIRECTORY) setSelectedNeed(need);
+    if (!zip) return;
+    prepareDistanceSort();
+    if (IS_NATIONAL_DIRECTORY) {
+      setFromPostalCode(zip);
+      return;
+    }
+    const coords = zipToCoords(zip);
+    if (coords) setFromZip(coords, zip);
+    // Apply a shared ?zip= once on entry. Do not write the URL automatically —
+    // a ZIP in history is a privacy cost, so copying a link stays explicit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!focusResultsAfterSearch.current) return;
+    if (!location || dataStatus === 'loading') return;
+    focusResultsAfterSearch.current = false;
+    focusResults();
+  }, [location, dataStatus, focusResults]);
+
   // Stable identity so the modal's focus-trap/scroll-lock effect runs on open/close only,
   // not on every re-render of App (e.g. typing in search).
   const closeModal = useCallback(() => setSelectedResource(null), []);
-
-  // The navbar's "Search Resources" button was inert -- App never passed a handler, so clicking
-  // it did nothing. It now moves focus to the hero's search field.
-  const focusSearch = useCallback(() => {
-    const el = document.getElementById(SEARCH_INPUT_ID) as HTMLInputElement | null;
-    if (!el) return;
-    // Focus FIRST: it is the behavior that matters, and scrollIntoView is not universally
-    // available -- calling it first meant one throw silently swallowed the focus entirely.
-    el.focus();
-    el.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
-  }, []);
-
-  const focusResults = useCallback(() => {
-    const heading = document.getElementById(RESULTS_HEADING_ID);
-    heading?.focus({ preventScroll: true });
-    heading?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
-  }, []);
 
   const showCategory = useCallback((category: string) => {
     setSearchQuery('');
@@ -154,6 +206,15 @@ export const App: React.FC = () => {
     }
     setView('list');
     requestAnimationFrame(() => {
+      const zipField = document.getElementById('zip-input');
+      if (IS_NATIONAL_DIRECTORY && zipField) {
+        zipField.focus();
+        zipField.scrollIntoView?.({
+          block: 'center',
+          behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+        });
+        return;
+      }
       focusResults();
     });
   }, [focusResults]);
@@ -170,30 +231,12 @@ export const App: React.FC = () => {
         <Hero
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          onSearchSubmit={focusResults}
+          onSearchSubmit={needsNationalLocation ? focusLocation : focusResults}
           onCategorySelect={showCategory}
           nationalDirectory={IS_NATIONAL_DIRECTORY}
         />
 
-        {coverage === 'local-demo' ? (
-          <div role="alert" className="bg-card-hover border-l-4 border-accent text-main rounded-xl px-4 py-3 text-sm">
-            <strong>Local demonstration directory.</strong> These are real, recently-reviewed Gainesville, FL
-            resources shown while the national data connection is being completed. The interface is national-ready,
-            but this build must not imply coverage it does not yet have. For current help, call{' '}
-            <a className="font-semibold underline" href="tel:211">211</a> (community services) or{' '}
-            <a className="font-semibold underline" href="tel:988">988</a> (crisis &amp; suicide lifeline).
-          </div>
-        ) : (
-          <div role="status" className="bg-card-hover border-l-4 border-accent text-main rounded-xl px-4 py-3 text-sm">
-            Searching <strong>{providerLabel}</strong> across food pantries, community meals,
-            free summer meals for kids, medical care, and behavioral-health services. Use the
-            need filters for cleaner results. For
-            shelter, housing, legal help, or another category not yet covered nationally, dial{' '}
-            <a className="font-semibold underline" href="tel:211">211</a>.
-          </div>
-        )}
-
-        {/* Location control (opt-in geolocation / on-device ZIP) */}
+        {/* Location is the national search gate — keep it above filters so "0 resources" is never the first impression. */}
         <LocationControl
           location={location}
           status={status}
@@ -203,7 +246,19 @@ export const App: React.FC = () => {
           onSetPostalCode={handleSetFromPostalCode}
           nationalCoverage={coverage === 'national'}
           onClear={handleClearLocation}
+          shareHref={
+            location?.source === 'zip' && location.label
+              ? directorySearchHref(
+                  location.label,
+                  IS_NATIONAL_DIRECTORY ? selectedNeed : undefined
+                )
+              : null
+          }
         />
+
+        <CoverageStrip nationalDirectory={coverage === 'national'} />
+
+        {needsNationalLocation && <HowItWorks />}
 
         {/* Category + sort controls (search itself lives in the Hero). */}
         <FilterPanel
@@ -227,6 +282,8 @@ export const App: React.FC = () => {
           sortBy={sortBy}
           onSortChange={setSortBy}
           totalResultsCount={needsNationalLocation ? 0 : total}
+          shownCount={needsNationalLocation ? 0 : resources.length}
+          radiusMiles={searchCoverage?.radiusMiles}
           distanceAvailable={!!location}
           availableLanguages={facets.languages}
           selectedLanguage={selectedLanguage}
@@ -234,6 +291,7 @@ export const App: React.FC = () => {
           wheelchairFilterAvailable={facets.hasWheelchairData}
           wheelchairOnly={wheelchairOnly}
           onWheelchairOnlyChange={setWheelchairOnly}
+          awaitingLocation={needsNationalLocation}
           resultsContext={
             coverage === 'national'
               ? 'from national food, medical, and behavioral-health directories'
@@ -254,15 +312,22 @@ export const App: React.FC = () => {
           }
         />
 
-        {/* Results heading -- also keeps the document outline sequential (h1 hero -> h2 here ->
-            h3 per card); without it the card headings jumped straight from h1 to h3. */}
+        <div className="sr-only" aria-live="polite" aria-atomic="true">
+          {needsNationalLocation
+            ? 'Enter a ZIP code or use your location to search the national directory.'
+            : dataStatus === 'loading' && resources.length === 0
+              ? 'Loading resources.'
+              : dataStatus === 'ready' && resources.length > 0
+                ? `Showing ${resources.length} of ${total} resources.`
+                : ''}
+        </div>
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <h2
             id={RESULTS_HEADING_ID}
             tabIndex={-1}
             className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-main focus:outline-none"
           >
-            Help near you
+            Help near {location?.label ? `ZIP ${location.label}` : location?.source === 'gps' ? 'your location' : 'you'}
           </h2>
           <div className="inline-flex rounded-xl border border-border bg-surface p-1" role="group" aria-label="View mode">
             <button
@@ -277,6 +342,7 @@ export const App: React.FC = () => {
             <button
               onClick={() => setView('map')}
               aria-pressed={view === 'map'}
+              disabled={needsNationalLocation || filteredResources.length === 0}
               className={`inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-1.5 font-display text-xs font-bold transition ${
                 view === 'map' ? 'bg-primary text-inverse' : 'text-muted hover:bg-card-hover'
               }`}
@@ -286,16 +352,16 @@ export const App: React.FC = () => {
           </div>
         </div>
 
+        {dataStatus === 'loading' && resources.length > 0 ? (
+          <p className="text-sm text-muted" role="status">
+            Updating results…
+          </p>
+        ) : null}
+
         {/* Results -- loading/error (from the ResourceProvider async boundary) first, then the
             empty state, which wins in BOTH views so the 211 fallback is never lost. */}
         {dataStatus === 'loading' && resources.length === 0 ? (
-          // Full-panel loading ONLY when there is nothing to show yet. During a
-          // refinement (new keystroke, filter change) the previous list stays
-          // visible instead of flashing away -- the hook keeps prior results
-          // until the new page resolves.
-          <div className="bg-surface rounded-2xl p-12 text-center border border-border shadow-sm">
-            <p className="text-muted text-sm" role="status">Loading resources…</p>
-          </div>
+          <ResultsSkeleton />
         ) : dataStatus === 'error' ? (
           <div role="alert" className="bg-surface rounded-2xl p-12 text-center border border-border shadow-sm">
             <h2 className="font-display text-lg font-bold text-main mb-1">Couldn't load the directory</h2>
@@ -305,17 +371,32 @@ export const App: React.FC = () => {
             </p>
           </div>
         ) : needsNationalLocation ? (
-          <div className="bg-surface rounded-2xl p-12 text-center border border-border shadow-sm">
-            <MapIcon className="w-12 h-12 text-muted mx-auto mb-3" aria-hidden="true" />
-            <h2 className="font-display text-lg font-bold text-main mb-1">Choose a location</h2>
-            <p className="text-muted text-sm max-w-md mx-auto">
-              Enter a ZIP code or opt into your device location to find nearby services.
-              Your search location is not stored by Hearth.
+          <div className="rounded-2xl border border-border bg-surface p-8 text-center shadow-sm sm:p-12">
+            <MapPin className="mx-auto mb-3 h-12 w-12 text-primary" aria-hidden="true" />
+            <h3 className="mb-1 font-display text-lg font-bold text-main">Where should we look?</h3>
+            <p className="mx-auto mb-4 max-w-md text-sm text-muted">
+              Enter a ZIP code above or use your device location to see nearby food, medical,
+              and behavioral-health listings. Your search location is not stored by Hearth.
             </p>
+            <div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
+              <button
+                type="button"
+                onClick={focusLocation}
+                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-4 py-2.5 font-display text-xs font-bold text-inverse hover:bg-primary-hover"
+              >
+                Enter a ZIP code
+              </button>
+              <a
+                href="tel:211"
+                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border px-4 py-2.5 font-display text-xs font-bold text-primary hover:bg-card-hover"
+              >
+                Or call 211 now
+              </a>
+            </div>
           </div>
         ) : filteredResources.length === 0 ? (
           <div className="bg-surface rounded-2xl p-12 text-center border border-border shadow-sm">
-            <AlertCircle className="w-12 h-12 text-muted mx-auto mb-3" />
+            <AlertCircle className="mx-auto mb-3 h-12 w-12 text-muted" aria-hidden="true" />
             <h2 className="font-display text-lg font-bold text-main mb-1">
               {zipRecognized === false
                 ? "We don't recognize that ZIP code"
@@ -349,6 +430,30 @@ export const App: React.FC = () => {
           </div>
         )}
 
+        {!needsNationalLocation && filteredResources.length > 0 && nextCursor ? (
+          <div className="flex flex-col items-center gap-2">
+            <button
+              type="button"
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 py-2.5 font-display text-sm font-bold text-inverse hover:bg-primary-hover disabled:cursor-wait"
+            >
+              {loadingMore ? 'Loading more…' : 'Show more nearby listings'}
+            </button>
+            <p className="text-xs text-muted">
+              {Math.max(0, total - filteredResources.length)} more in this search
+              {typeof searchCoverage?.radiusMiles === 'number'
+                ? ` · within about ${searchCoverage.radiusMiles} miles`
+                : ''}
+            </p>
+            {loadMoreError ? (
+              <p className="text-xs font-medium text-danger" role="alert">
+                {loadMoreError}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
         {/* Closing hope/community note -- the brand's voice, and honest about what is free:
             Hearth itself, not every third-party organization's pricing. */}
         <section className="rounded-2xl bg-card-hover px-6 py-8 sm:px-8">
@@ -356,8 +461,8 @@ export const App: React.FC = () => {
             Asking for help is how a community takes care of its own.
           </p>
           <p className="mt-3 text-sm text-muted max-w-2xl">
-            Always free to search · no account · no tracking. Each listing shows when it was last
-            reviewed.
+            Free to search · no account · no advertising. Each listing shows its source and
+            when it was last reviewed. Call before traveling.
           </p>
         </section>
 

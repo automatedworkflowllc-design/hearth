@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Live Hearth site
+    url: https://automatedworkflowllc-design.github.io/hearth/
+    about: Search the hosted directory (ZIP required for national results).
+  - name: Email a listing correction
+    url: mailto:automatedworkflowllc@gmail.com
+    about: Use if you cannot open a GitHub issue. Do not include private or medical information.

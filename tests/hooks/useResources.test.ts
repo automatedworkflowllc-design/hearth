@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { useResources } from '../../src/hooks/useResources';
 import type { ResourceProvider } from '../../src/providers/resourceProvider';
@@ -64,5 +64,38 @@ describe('useResources (the query-based provider boundary)', () => {
     expect(result.current.status).toBe('ready');
     expect(result.current.total).toBe(0);
     expect(search).not.toHaveBeenCalled();
+  });
+
+  it('appends the next page without dropping the first page', async () => {
+    const pageOne = { ...sample[0], id: 'a', name: 'Alpha' };
+    const pageTwo = { ...sample[0], id: 'b', name: 'Beta' };
+    const search = vi.fn(async (incoming: ResourceSearchRequest) => {
+      if (!incoming.cursor) {
+        return {
+          resources: [pageOne],
+          total: 2,
+          nextCursor: 'page-2',
+          facets: { languages: [], hasWheelchairData: false },
+        };
+      }
+      return {
+        resources: [pageTwo],
+        total: 2,
+        facets: { languages: [], hasWheelchairData: false },
+      };
+    });
+    const provider: ResourceProvider = { ...okProvider, search };
+    const { result } = renderHook(() => useResources(provider, request));
+
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    expect(result.current.resources.map((resource) => resource.id)).toEqual(['a']);
+
+    await act(async () => {
+      result.current.loadMore();
+    });
+
+    await waitFor(() => expect(result.current.resources.map((resource) => resource.id)).toEqual(['a', 'b']));
+    expect(result.current.nextCursor).toBeUndefined();
+    expect(result.current.status).toBe('ready');
   });
 });

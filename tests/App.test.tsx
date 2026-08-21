@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // The map is verified in-browser, not in jsdom (leaflet-in-jsdom is the theater the audit
 // condemned). Mock react-leaflet so rendering <App/> is hermetic; these tests stay in list view.
@@ -16,6 +16,10 @@ vi.mock('leaflet', () => ({ default: { divIcon: () => ({}) } }));
 
 import App from '../src/App';
 
+afterEach(() => {
+  window.history.replaceState({}, '', '/');
+});
+
 // Resources now load through the ResourceProvider async boundary (useResources), so the first
 // render shows a loading state; findByText waits for the (immediate) static provider to resolve.
 const RESOURCE = 'Bread of the Mighty Food Bank';
@@ -25,6 +29,7 @@ describe('App integration', () => {
     render(<App />);
     expect(await screen.findByText(RESOURCE)).toBeInTheDocument();
     expect(screen.getByText(/Showing 11 resources in the Gainesville, FL area/i)).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(/local demonstration directory/i);
     expect(screen.queryByRole('button', { name: /substance-use help/i })).not.toBeInTheDocument();
   });
 
@@ -59,6 +64,14 @@ describe('App integration', () => {
     expect(screen.getByRole('heading', { name: /help near you/i })).toHaveFocus();
   });
 
+  it('offers a location control without implying the directory is empty', async () => {
+    render(<App />);
+    await screen.findByText(RESOURCE);
+    expect(screen.getByText(/find help near you/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /search this zip/i })).toBeInTheDocument();
+    expect(screen.queryByText(/showing 0 resources/i)).not.toBeInTheDocument();
+  });
+
   it('navbar search button focuses the search field (it used to be inert)', async () => {
     render(<App />);
     await screen.findByText(RESOURCE);
@@ -76,6 +89,14 @@ describe('App integration', () => {
     expect(dialog).toHaveAttribute('aria-modal', 'true');
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('applies a ZIP from the query string so a shared link can skip the empty state', async () => {
+    window.history.replaceState({}, '', '/?zip=32601');
+    render(<App />);
+    expect(await screen.findByText(/showing nearby results from ZIP 32601/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /help near ZIP 32601/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /copy link/i })).toBeInTheDocument();
   });
 });
 

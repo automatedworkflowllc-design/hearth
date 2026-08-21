@@ -367,7 +367,11 @@ export function buildResourceQuery(
   // was present while the JS layer re-sorted each page by name -- every 50-row page
   // was the next-nearest slice shown alphabetically, interleaving names across
   // pages and duplicating/skipping rows at cursor boundaries.
-  const orderByDistance = resolvedLocation && options.sort === 'distance';
+  //
+  // "Relevance" with a location and no other ranking signal is nearness: the older
+  // path ordered by name, so a Gainesville ZIP's first page was distant A-names
+  // 60–75 miles away. Name sort remains available for an explicit A–Z request.
+  const orderByDistance = Boolean(resolvedLocation) && options.sort !== 'name';
   const order = orderByDistance
     ? 'ORDER BY ((latitude - ?) * (latitude - ?)) + ((longitude - ?) * (longitude - ?)), name'
     : 'ORDER BY name';

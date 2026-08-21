@@ -16,7 +16,7 @@ records remain the local-development fallback.
 - `src/hooks/useGeolocation.ts`: opt-in GPS, local demo ZIP centroids, and coordinate-free national
   ZIP searches.
 - `src/components/`: responsive UI, crisis actions, filters, list/map, resource details, corrections,
-  and accessibility controls.
+  coverage honesty, location-first search, and accessibility controls.
 - `src/data/resources.ts`: 11 source-backed Gainesville demonstration records.
 - `worker/`: Cloudflare Worker search API and D1 schema.
 - `scripts/import-hrsa.mjs`: batched import for 18,885 active HRSA health-center sites.
@@ -28,6 +28,8 @@ proxy URL with `VITE_HEARTH_API_BASE_URL`.
 ## Product and operations
 
 - [README.md](./README.md): product overview and honest limitations.
+- [ROADMAP.md](./ROADMAP.md): current backlog and coverage gaps.
+- [CONTRIBUTING.md](./CONTRIBUTING.md): how to change the product without inventing claims.
 - [NATIONAL-SERVICE.md](./NATIONAL-SERVICE.md): national source stack and API contract.
 - [DATA-OPERATIONS.md](./DATA-OPERATIONS.md): publication, review, and correction runbook.
 - [DESIGN.md](./DESIGN.md): visual system and interaction guidance.

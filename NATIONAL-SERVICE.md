@@ -103,7 +103,8 @@ complete national coverage for a category.
 - `q`, `category`, or `need` (`food`, `food-assistance`, `summer-meals`, `medical-care`,
   `mental-health`, `substance-use`, `detox`)
 - either `zip` or `lat` + `lng`
-- `sort` (`relevance`, `name`, `distance`)
+- `sort` (`relevance`, `name`, `distance`). With a ZIP or coordinates, `relevance`
+  and `distance` both order by nearness; `name` stays A–Z inside the search radius.
 - `language`, `wheelchair`
 - `limit` (maximum 100), opaque `cursor`
 
@@ -118,7 +119,9 @@ It returns:
     "hasWheelchairData": false
   },
   "nextCursor": null,
-  "generatedAt": "2026-07-25T00:00:00Z"
+  "generatedAt": "2026-07-25T00:00:00Z",
+  "coverage": { "radiusMiles": 75, "sources": ["HRSA"] },
+  "zipRecognized": true
 }
 ```
 

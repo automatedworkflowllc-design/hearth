@@ -90,6 +90,18 @@ describe('national directory worker', () => {
     expect(query.pageBindings.at(-2)).toBe(100);
   });
 
+  it('orders a nearby search by distance unless the caller asked for name', () => {
+    const location = { latitude: 29.6516, longitude: -82.3248 };
+    const relevance = buildResourceQuery({ sort: 'relevance', limit: 20, offset: 0 }, location);
+    const distance = buildResourceQuery({ sort: 'distance', limit: 20, offset: 0 }, location);
+    const name = buildResourceQuery({ sort: 'name', limit: 20, offset: 0 }, location);
+
+    expect(relevance.sql).toMatch(/ORDER BY \(\(latitude -/);
+    expect(distance.sql).toMatch(/ORDER BY \(\(latitude -/);
+    expect(name.sql).toContain('ORDER BY name');
+    expect(name.sql).not.toMatch(/ORDER BY \(\(latitude -/);
+  });
+
   it('rejects malformed coordinates and cursors', () => {
     expect(() =>
       parseSearchOptions(new URL('https://directory.example/v1/resources/search?lat=29'))

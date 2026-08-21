@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { getPrimaryContact } from '../utils/contact';
 import { getReviewState } from '../services/dataQuality';
+import { formatApproxDistance, formatResourceCity, formatResourcePlace } from '../utils/place';
 
 interface ResourceCardProps {
   resource: Resource;
@@ -25,10 +26,13 @@ const categoryColors: Record<string, string> = {
   support: 'text-cat-support',
 };
 
-function approxDistance(miles: number): string {
-  if (miles < 1) return 'under 1 mi';
-  return `~${Math.round(miles)} mi`;
-}
+const categoryAccents: Record<string, string> = {
+  food: 'border-l-cat-food',
+  shelter: 'border-l-cat-shelter',
+  health: 'border-l-cat-health',
+  legal: 'border-l-cat-legal',
+  support: 'border-l-cat-support',
+};
 
 function formatReviewDate(isoDate: string): string {
   const parsed = new Date(`${isoDate}T00:00:00Z`);
@@ -48,10 +52,14 @@ function ContactIcon({ contact }: { contact: ContactMethod }) {
 }
 
 export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onSelect }) => {
-  const categoryClass = categoryColors[resource.category.toLowerCase()] ?? 'text-main';
+  const categoryKey = resource.category.toLowerCase();
+  const categoryClass = categoryColors[categoryKey] ?? 'text-main';
+  const accentClass = categoryAccents[categoryKey] ?? 'border-l-primary';
   const primaryContact = getPrimaryContact(resource);
   const reviewDate = resource.review?.reviewedAt ?? resource.lastVerified;
   const reviewState = getReviewState(resource);
+  const place = formatResourcePlace(resource);
+  const sourceName = resource.review?.sources[0]?.name;
   const externalContact =
     primaryContact && ['website', 'chat', 'intake'].includes(primaryContact.type);
 
@@ -60,49 +68,57 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onSelect }
     : resource.hours.map((hour) => `${hour.day}: ${hour.closed ? 'Closed' : `${hour.open}-${hour.close}`}`).join(', ');
 
   return (
-    <article className="flex h-full flex-col rounded-2xl border border-border bg-surface p-5 shadow-sm transition-all duration-200 hover:shadow-md">
-      <span className={`font-display text-xs font-extrabold uppercase tracking-wider ${categoryClass}`}>
-        {resource.category}
-      </span>
+    <article className={`flex h-full flex-col rounded-2xl border border-border border-l-4 ${accentClass} bg-surface p-5 shadow-sm transition-all duration-200 hover:bg-card-hover hover:shadow-md`}>
+      <div className="flex items-start justify-between gap-3">
+        <span className={`font-display text-xs font-extrabold uppercase tracking-wider ${categoryClass}`}>
+          {resource.category}
+        </span>
+        {typeof resource.distanceMiles === 'number' && (
+          <span className="shrink-0 rounded-full bg-app px-2.5 py-1 text-xs font-bold text-main">
+            {formatApproxDistance(resource.distanceMiles)}
+          </span>
+        )}
+      </div>
 
       <h3 className="mt-1.5 font-display text-lg font-bold text-main">{resource.name}</h3>
+      {formatResourceCity(resource) ? (
+        <p className="mt-0.5 text-sm font-medium text-main">{formatResourceCity(resource)}</p>
+      ) : null}
 
       <p className="mt-1.5 line-clamp-2 text-sm text-muted">{resource.description}</p>
 
       <div className="mt-3 flex flex-wrap gap-1.5">
-        {typeof resource.distanceMiles === 'number' && (
-          <span className="rounded-full bg-card-hover px-2.5 py-1 text-xs font-bold text-main">
-            {approxDistance(resource.distanceMiles)}
-          </span>
-        )}
         {resource.availability && (
-          <span className="rounded-full bg-card-hover px-2.5 py-1 text-xs font-bold text-main">
+          <span className="rounded-full bg-app px-2.5 py-1 text-xs font-bold text-main">
             {resource.availability}
           </span>
         )}
         {resource.languages?.map((language) => (
-          <span key={language.code} className="inline-flex items-center gap-1 rounded-full bg-card-hover px-2.5 py-1 text-xs font-bold text-main">
+          <span key={language.code} className="inline-flex items-center gap-1 rounded-full bg-app px-2.5 py-1 text-xs font-bold text-main">
             <Languages className="h-3 w-3" aria-hidden="true" /> {language.label}
           </span>
         ))}
         {resource.accessibility?.wheelchair === 'yes' && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-card-hover px-2.5 py-1 text-xs font-bold text-main">
+          <span className="inline-flex items-center gap-1 rounded-full bg-app px-2.5 py-1 text-xs font-bold text-main">
             <Accessibility className="h-3 w-3" aria-hidden="true" /> Wheelchair access documented
           </span>
         )}
       </div>
 
       <div className="mt-4 space-y-2 text-xs text-muted">
-        {resource.address && (
+        {place && (
           <div className="flex items-start gap-2">
             <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
-            <span>{resource.address}</span>
+            <span>{place}</span>
           </div>
         )}
         <div className="flex items-start gap-2">
           <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
-          <span>{hoursDisplay}</span>
+          <span className="line-clamp-2">{hoursDisplay}</span>
         </div>
+        {sourceName && (
+          <p>Listed by {sourceName}</p>
+        )}
         {reviewDate && (
           <p className={reviewState === 'current' ? 'text-muted' : 'font-semibold text-primary'}>
             {reviewState === 'exception' || reviewState === 'needs-review' ? 'Needs confirmation · ' : 'Listing reviewed '}

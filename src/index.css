@@ -137,6 +137,15 @@ footer :focus-visible {
   outline-color: var(--text-on-nav);
 }
 
+/* Sticky nav offsets in-page focus/scroll targets so they are not hidden. */
+#main-content,
+#location-search,
+#zip-input,
+#directory-coverage,
+#resource-results {
+  scroll-margin-top: 5.5rem;
+}
+
 /* The amber "hearth glow" behind the hero headline -- decorative, non-text, aria-hidden in
    markup. Suppressed entirely in high-contrast: a soft blurred glow has no place in a mode
    whose whole point is stark maximum contrast. */
@@ -156,6 +165,35 @@ html[data-contrast="high-contrast"] .hearth-glow,
 @keyframes hearth-glow-drift {
   from { transform: translate(0, 0) scale(1); }
   to { transform: translate(-2%, 2%) scale(1.04); }
+}
+
+/* Dialog scrim: a real color, not Tailwind opacity on a token (those declarations drop). */
+.hearth-scrim {
+  background-color: rgb(36 26 34 / 0.55);
+}
+html[data-contrast="high-contrast"] .hearth-scrim,
+.high-contrast .hearth-scrim {
+  background-color: rgb(0 0 0 / 0.88);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hearth-scrim {
+    backdrop-filter: blur(2px);
+  }
+}
+
+html[data-contrast="high-contrast"] .resource-pin svg path,
+.high-contrast .resource-pin svg path {
+  fill: #ffff00 !important;
+  stroke: #000000 !important;
+}
+html[data-contrast="high-contrast"] .resource-pin svg circle,
+.high-contrast .resource-pin svg circle {
+  fill: #000000 !important;
+}
+html[data-contrast="high-contrast"] .hearth-user-marker,
+.high-contrast .hearth-user-marker {
+  fill: #00ffff !important;
+  stroke: #000000 !important;
 }
 
 /* Leaflet map container styling */

@@ -3,7 +3,8 @@
 **A calm, honest place to find help.** Hearth is being built as a national directory of food,
 shelter, health, legal, and community-support resources for people who may be under stress.
 
-**Live demo:** <https://automatedworkflowllc-design.github.io/hearth/>
+**Live demo:** <https://automatedworkflowllc-design.github.io/hearth/>  
+**Nearby example (Gainesville ZIP in the link):** <https://automatedworkflowllc-design.github.io/hearth/?zip=32601>
 
 > The public build connects to nationwide HRSA health-center, SAMHSA behavioral-health,
 > EPA/Hunger Free America food-assistance, and seasonal USDA SUN Meals layers, positioned with
@@ -73,6 +74,8 @@ The interface does not translate missing metadata into a claim. Details that can
 carry “call before traveling” guidance, and every detail view has an account-free correction link.
 
 The current local source record is [VERIFIED-ORGS.md](./VERIFIED-ORGS.md).
+The working backlog is [ROADMAP.md](./ROADMAP.md). How to contribute is in
+[CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Tech
 
